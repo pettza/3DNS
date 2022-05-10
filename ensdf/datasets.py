@@ -8,7 +8,7 @@ import trimesh
 
 from .sampling import sample_uniform_sphere, sample_uniform_disk, sample_uniform_mesh
 from .sampling.sdf import SDFSampler
-from .geoutils import triangle_area, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
+from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
 
 
 class DatasetBase(ABC):
@@ -28,11 +28,8 @@ class PointCloudDataset(DatasetBase):
         self.points  = torch.from_numpy(point_cloud[:, :3]).float().to(self.device)
         self.normals = torch.from_numpy(point_cloud[:, 3:]).float().to(self.device)
 
-        # Normalize points to lie inside [-1, 1]^3
-        border = 0.15
-        self.points -= self.points.mean(axis=0, keepdims=True)
-        scale = self.points.max() - self.points.min()
-        self.points *= (1 - border) * 2 / scale
+        # Normalize points to lie inside [-(1 - border), 1 - border]^3
+        normalize_point_cloud(self.points, border = 0.15)
 
     def sample(self, num_samples=None):
         num_samples = num_samples or self.num_samples
@@ -61,7 +58,7 @@ class MeshDataset(DatasetBase):
 
         self.mesh = trimesh.load_mesh(mesh_path)
 
-        # Normalize mesh to lie inside [-1, 1]^3
+        # Normalize mesh to lie inside [-(1 - border), 1 - border]^3
         normalize_trimesh(self.mesh, border=0.15)
 
         self.vertices = torch.tensor(self.mesh.vertices, dtype=torch.float32, device=device)

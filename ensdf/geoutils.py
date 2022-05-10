@@ -20,6 +20,19 @@ def triangle_area(triag_verts):
 
     return torch.norm(torch.cross(edge1, edge2), dim=1) / 2
 
+def normalize_point_cloud(pc, border=0):
+    """
+    Normalizes a point cloud to lie inside [-(1 - border), 1 - border]^N by centering its bounding box
+    to the origin and scaling uniformly using its largest axis as the inverse of the scale
+
+    Args:
+        pc (torch.Tensor): The point cloud to normalize with shape [N, N], 
+                           where M the number of pointe and  N the number of dimensions
+        border (optional float): This should be in [0, 1). Default value is 0.
+    """
+    pc -= pc.mean(axis=0, keepdims=True)
+    max_extent = pc.max() - pc.min()
+    pc *= (1 - border) * 2 / max_extent
 
 def normalize_open3d_geometry(geometry, border=0):
     """
