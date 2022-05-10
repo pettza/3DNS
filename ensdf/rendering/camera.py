@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from turtle import pos
 
 import numpy as np
 import torch
@@ -58,12 +57,12 @@ class CameraBase(ABC):
     @property
     @abstractmethod
     def position(self):
-        pass
+        raise NotImplemented
     
     @property
     @abstractmethod
     def orientation_matrix(self):
-        pass
+        raise NotImplemented
 
     def generate_rays(self):
         x_half_extent = np.tan(self.fov / 2)
@@ -94,7 +93,7 @@ class CameraBase(ABC):
 
 
 class SimpleCamera(CameraBase):
-    def __init__(self, position, fov, resolution, yaw, pitch, roll):
+    def __init__(self, fov, resolution, position, yaw, pitch, roll):
         super().__init__(fov, resolution)
         
         self.position = torch.tensor(position, dtype=torch.float)
