@@ -8,7 +8,9 @@ from options import create_parser, add_edit_training_options
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import datasets, training, modules
 from ensdf.rendering.raymarching import raymarch_single_ray
+from ensdf.rendering.aabb import AABB
 from ensdf.utils import get_cuda_if_available
+from ensdf.brushes import SimpleBrush
 
 
 def main():
@@ -53,20 +55,34 @@ def main():
     model = modules.Siren.load(options.model_path)
     model.to(device)
 
+    aabb = AABB([0., 0., 0.], [1., 1., 1.], device=device)
+
     origin    = torch.tensor([[options.ox, options.oy, options.oz]], device=device)
     direction = torch.tensor([[options.dx, options.dy, options.dz]], device=device)
 
-    inter_point, inter_normal, inter_sdf = raymarch_single_ray(model, origin, direction)
-    dataset = datasets.SDFEditingDataset(model, device, inter_point, inter_normal, inter_sdf, inter_radius=0.07,
-                                         sample_model_update_iters=10,
-                                         num_interaction_samples=options.num_interaction_samples,
-                                         num_model_samples=options.num_model_samples)
+    inter_point, inter_normal, inter_sdf, ray_hit = raymarch_single_ray(model, aabb, origin, direction)
+    
+    if not ray_hit:
+        print("The specified ray doesn't intersect the surface")
+        exit()
 
-    training.train_sdf(model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
-                       epochs_til_checkpoint=options.epochs_til_ckpt, pretrain_epochs=0,
-                       regularization_samples=options.regularization_samples,
-                       include_empty_space_loss=not options.no_empty_space,
-                       ewc=options.ewc, model_dir=options.model_dir, device=device)
+    brush = SimpleBrush()
+    brush.set_interaction(inter_point, inter_normal, inter_sdf)
+
+    dataset = datasets.SDFEditingDataset(
+        model, brush, device,
+        sample_model_update_iters=10,
+        num_interaction_samples=options.num_interaction_samples,
+        num_model_samples=options.num_model_samples
+    )
+
+    training.train_sdf(
+        model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
+        epochs_til_checkpoint=options.epochs_til_ckpt, pretrain_epochs=0,
+        regularization_samples=options.regularization_samples,
+        include_empty_space_loss=not options.no_empty_space,
+        ewc=options.ewc, model_dir=options.model_dir, device=device
+    )
 
 
 if __name__ == '__main__':

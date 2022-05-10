@@ -74,10 +74,12 @@ def raymarch(model, aabb, origins, directions, batch_size=1<<22, num_iter=40):
 def raymarch_single_ray(model, aabb, origin, direction, max_iter=40):
     model.eval()
     
-    # Move raya outside the bounding box to the points they intersect
+    # If ray is outside the bounding box, move it to where it intersects it
     hit, thit = aabb.intersect(origin, direction)
     inside_bb = aabb.contains(origin)
-    point = origin + thit.where(hit & ~inside_bb, 0.) * direction
+    point = origin
+    if hit and not inside_bb:
+        point = origin + thit * direction
     
     with torch.no_grad():
         for i in range(max_iter):

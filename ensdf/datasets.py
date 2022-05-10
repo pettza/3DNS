@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import numpy as np
 import trimesh
 
+from ensdf import brushes
+
 from .sampling import sample_uniform_sphere, sample_uniform_disk, sample_uniform_mesh
 from .sampling.sdf import SDFSampler
 from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
@@ -14,7 +16,7 @@ from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh, s
 class DatasetBase(ABC):
     @abstractmethod
     def sample(self):
-        pass
+        raise NotImplemented
 
 
 class PointCloudDataset(DatasetBase):
@@ -122,20 +124,24 @@ class RegularizationDataset(DatasetBase):
         return {'points': sample_points}
 
 
+SAMPLER_BURNOUT_ITER = 10
+
+
 class SDFEditingDataset(DatasetBase):
-    def __init__(self, model, device, inter_point, inter_normal, inter_sdf, inter_radius,
-                 sample_model_update_iters, num_interaction_samples, num_model_samples):
+    def __init__(
+        self, model, brush : brushes.BrushBase, device,
+        sample_model_update_iters,
+        num_interaction_samples,
+        num_model_samples
+    ):
         super().__init__()
+
         self.model = model
         self.device = device
         self.sample_model_update_iters = sample_model_update_iters
         self.iters = 0
 
-        self.inter_model = copy.deepcopy(self.model)
-        self.inter_point = inter_point
-        self.inter_normal = F.normalize(inter_normal, dim=-1)
-        self.inter_sdf = inter_sdf
-        self.inter_radius = inter_radius
+        self.brush = brush
 
         self.num_interaction_samples = num_interaction_samples
         self.num_model_samples = num_model_samples
@@ -144,6 +150,10 @@ class SDFEditingDataset(DatasetBase):
             copy.deepcopy(self.model),
             self.device, self.num_model_samples
         )
+        
+        for i in range(SAMPLER_BURNOUT_ITER):
+            next(self.sdf_sampler)
+        
         self.model_samples = None
         self.next_model_samples = next(self.sdf_sampler)
 
@@ -157,43 +167,17 @@ class SDFEditingDataset(DatasetBase):
         self.next_model_samples = next(self.sdf_sampler)
 
         # Model samples
-        keep_cond = (
-            (self.model_samples['points'] - self.inter_point).norm(dim=1) > self.inter_radius
-        )
-        filtered_model_points = self.model_samples['points'][keep_cond]
+        keep_cond = ~self.brush.inside_interaction(self.model_samples['points'])
+        filtered_model_points  = self.model_samples['points'][keep_cond]
         filtered_model_normals = self.model_samples['normals'][keep_cond]
         filtered_model_sdf     = self.model_samples['sdf'][keep_cond]
 
-        self.num_interaction_samples = self.num_model_samples - filtered_model_points.shape[0]
+        # self.num_interaction_samples = self.num_model_samples - filtered_model_points.shape[0]
 
         # Interaction samples
-        disk_samples = sample_uniform_disk(self.inter_normal, self.num_interaction_samples)
-        disk_samples = disk_samples.squeeze(0) * self.inter_radius
-        disk_sample_norms = torch.norm(disk_samples, dim=-1)
-
-        y, dy = smoothfall(disk_sample_norms, radius=self.inter_radius, return_derivative=True)
-        y, dy = 0.04 * y.unsqueeze(1), 0.04 * dy.unsqueeze(1)
-
-        inter_normals = F.normalize(disk_samples, dim=-1)
-        inter_normals.mul_(dy)
-
-        inter_points = torch.add(disk_samples, self.inter_point, out=disk_samples)
-        projected_samples, projected_sdf, projected_normals = project_on_surface(
-            self.model,
-            inter_points,
-            num_steps=2
+        inter_points, inter_sdf, inter_normals = (
+            self.brush.sample_interaction(self.model, self.num_interaction_samples)
         )
-        inter_points = torch.addcmul(projected_samples,
-                                     y,
-                                     self.inter_normal,
-                                     out=projected_samples)
-
-        tan_grad = tangent_grad(projected_normals, self.inter_normal)
-        inter_normals.add_(tan_grad)
-        torch.add(self.inter_normal, inter_normals, alpha=-1, out=inter_normals)
-        F.normalize(inter_normals, dim=-1, out=inter_normals)
-
-        inter_sdf = torch.zeros(self.num_interaction_samples, 1, device=self.device)
 
         # Collect all samples
         sample_points  = torch.cat((filtered_model_points, inter_points))
