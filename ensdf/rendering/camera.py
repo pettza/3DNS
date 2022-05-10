@@ -4,49 +4,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-
-def euler_to_matrix(yaw, pitch, roll):
-    c_yaw = np.cos(yaw)
-    s_yaw = np.sin(yaw)
-
-    c_pitch = np.cos(pitch)
-    s_pitch = np.sin(pitch)
-
-    c_roll = np.cos(roll)
-    s_roll = np.sin(roll)    
-
-    yaw_mat = np.array(
-        [
-            [c_yaw , 0., s_yaw],
-            [0.    , 1., 0.   ],
-            [-s_yaw, 0., c_yaw]
-        ]
-    )
-    pitch_mat = np.array(
-        [
-            [1., 0.     , 0.      ],
-            [0., c_pitch, -s_pitch],
-            [0., s_pitch, c_pitch ]
-        ]
-    )
-    roll_mat = np.array(
-        [
-            [c_roll, -s_roll, 0.],
-            [s_roll, c_roll , 0.],
-            [0.    , 0.     , 1.]
-        ]
-    )
-
-    return yaw_mat @ pitch_mat @ roll_mat
-
-
-def spherical_to_cartesian(phi, theta, radius):
-    # y is up
-    y = radius * np.cos(theta)
-    x = radius * np.sin(phi) * np.sin(theta)
-    z = radius * np.cos(phi) * np.sin(theta)
-
-    return x, y, z
+from ..geoutils import euler_to_matrix, spherical_to_cartesian
 
 
 class CameraBase(ABC):
