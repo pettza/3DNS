@@ -8,7 +8,7 @@ import trimesh
 
 from .sampling import sample_uniform_sphere, sample_uniform_disk, sample_uniform_mesh
 from .sampling.sdf import SDFSampler
-from .utils import triangle_area, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
+from .geoutils import triangle_area, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
 
 
 class DatasetBase(ABC):

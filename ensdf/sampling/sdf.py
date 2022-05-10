@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 from ..diff_operators import gradient
-from ..utils import project_on_surface
+from ..geoutils import project_on_surface
 
 from .primitives import sample_uniform_disk
 
