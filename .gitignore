@@ -1,0 +1,9 @@
+.vscode
+
+__pycache__/
+
+draft_scripts/
+
+# Too large files
+data/
+models/
