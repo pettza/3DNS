@@ -16,32 +16,35 @@ def main():
     add_edit_training_options(arg_parser)
 
 
-    #Model options
-    arg_parser.add_argument('--model_path', type=str, required=True,
-                            help='Path to pretrained model.')
+    # Model options
+    model_group = arg_parser.add_argument_group('Model options')
+    model_group.add_argument('--model_path', type=str, required=True,
+                             help='Path to pretrained model.')
 
 
     # Dataset options
-    arg_parser.add_argument('--num_interaction_samples', type=int, default=5000,
-                            help='Number of samples for interaction.')
-    arg_parser.add_argument('--num_model_samples', type=int, default=120000,
-                            help='Number of samples from pretrained model.')
+    dataset_group = arg_parser.add_argument_group('Dataset options')
+    dataset_group.add_argument('--num_interaction_samples', type=int, default=5000,
+                               help='Number of samples for interaction.')
+    dataset_group.add_argument('--num_model_samples', type=int, default=120000,
+                               help='Number of samples from pretrained model.')
 
 
     # Interaction options
-    arg_parser.add_argument('--ox', type=float, default=0.,
-                            help='X component of origin of interaction ray')
-    arg_parser.add_argument('--oy', type=float, default=0.,
-                            help='Y component of origin of interaction ray')
-    arg_parser.add_argument('--oz', type=float, default=0.9,
-                            help='Z component of origin of interaction ray')
+    interaction_group = arg_parser.add_argument_group('Interaction options')
+    interaction_group.add_argument('--ox', type=float, default=0.,
+                                   help='X component of origin of interaction ray')
+    interaction_group.add_argument('--oy', type=float, default=0.,
+                                   help='Y component of origin of interaction ray')
+    interaction_group.add_argument('--oz', type=float, default=0.9,
+                                   help='Z component of origin of interaction ray')
 
-    arg_parser.add_argument('--dx', type=float, default=0.,
-                            help='X component of direction of interaction ray')
-    arg_parser.add_argument('--dy', type=float, default=0.,
-                            help='Y component of direction of interaction ray')
-    arg_parser.add_argument('--dz', type=float, default=-1.,
-                            help='Z component of direction of interaction ray')
+    interaction_group.add_argument('--dx', type=float, default=0.,
+                                   help='X component of direction of interaction ray')
+    interaction_group.add_argument('--dy', type=float, default=0.,
+                                   help='Y component of direction of interaction ray')
+    interaction_group.add_argument('--dz', type=float, default=-1.,
+                                   help='Z component of direction of interaction ray')
 
 
     options = arg_parser.parse_args()
@@ -52,7 +55,6 @@ def main():
 
     origin    = torch.tensor([[options.ox, options.oy, options.oz]], device=device)
     direction = torch.tensor([[options.dx, options.dy, options.dz]], device=device)
-
 
     inter_point, inter_normal, inter_sdf = raymarch_single_ray(model, origin, direction)
     dataset = datasets.SDFEditingDataset(model, device, inter_point, inter_normal, inter_sdf, inter_radius=0.07,

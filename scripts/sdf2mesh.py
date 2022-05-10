@@ -20,8 +20,9 @@ def main():
                             help='Show the mesh before exitng')
 
     # Model options
-    arg_parser.add_argument('--checkpoint_path', type=str, required=True,
-                            help='Path to model checkpoint')
+    model_group = arg_parser.add_argument_group('Model options')
+    model_group.add_argument('--checkpoint_path', type=str, required=True,
+                             help='Path to model checkpoint')
 
     # Method options
     method_arg_group = arg_parser.add_argument_group('Meshing method options')
