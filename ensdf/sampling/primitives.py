@@ -140,3 +140,20 @@ def sample_uniform_mesh(vertices, triangles, normals, area_dist, num_samples):
 
     point_samples, normal_samples, uv = sample_uniform_triangle(triag_verts, samples_per_triag=1, normals=normals[face_idx])
     return point_samples.squeeze(1), normal_samples.squeeze(1)
+
+
+def sample_uniform_aabb(aabb, num_samples):
+    '''
+    Uniformly samples an AABB
+
+    Args:
+        aabb (AABB)
+        num_samples (int): the number of samples
+
+    Returns:
+        torch.Tensor
+    '''
+    samples = torch.rand(num_samples, 3, device=aabb.center.device)
+    samples = 2 * aabb.half_extent * (samples - 0.5) + aabb.center
+
+    return samples

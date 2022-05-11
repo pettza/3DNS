@@ -23,3 +23,6 @@ class AABB:
         thit = torch.relu(torch.where(tmin >= 0., tmin, tmax))
 
         return hit, thit
+
+    def volume(self):
+        return torch.prod(2 * self.half_extent)

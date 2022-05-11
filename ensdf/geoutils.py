@@ -2,7 +2,8 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from .diff_operators import gradient
+from .diff_operators import divergence, gradient, laplace
+from .sampling import sample_uniform_aabb
 
 
 def triangle_area(triag_verts):
@@ -163,3 +164,31 @@ def spherical_to_cartesian(phi, theta, radius):
 
     return x, y, z
 
+
+def sdf_volume(model, aabb, num_samples):
+    samples = sample_uniform_aabb(aabb, num_samples)
+    
+    sdf = model(samples)
+    inside_surface = sdf <= 0
+    
+    volume = torch.count_nonzero(inside_surface) / num_samples * aabb.volume()
+    
+    return volume
+
+
+def sdf_area(model, aabb, num_samples):
+    samples = sample_uniform_aabb(aabb, num_samples)
+    samples.requires_grad = True
+    
+    sdf = model(samples)
+    inside_surface = sdf <= 0
+    
+    volume = torch.count_nonzero(inside_surface) / num_samples * aabb.volume()
+    
+    # Divergence of gradient
+    divergence = laplace(sdf, samples)
+    divergence = divergence[inside_surface].detach()
+
+    area = divergence.mean() * volume
+
+    return area
