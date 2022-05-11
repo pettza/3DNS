@@ -7,8 +7,8 @@ from options import create_parser, add_edit_training_options
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import datasets, training, modules
-from ensdf.rendering.raymarching import raymarch_single_ray
-from ensdf.rendering.aabb import AABB
+from ensdf.aabb import AABB
+from ensdf.raymarching import raymarch_single_ray
 from ensdf.utils import get_cuda_if_available
 from ensdf.brushes import SimpleBrush
 

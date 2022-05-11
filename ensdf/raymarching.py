@@ -2,8 +2,8 @@ import torch
 import numpy as np
 from math import inf
 
-from ..utils import batch_computation
-from ..diff_operators import gradient
+from .utils import batch_computation
+from .diff_operators import gradient
 
 
 RAYMARCH_CONVERGENCE_THRESHOLD = 0.001

@@ -13,9 +13,9 @@ from screen_texture import ScreenTexture
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 import ensdf.modules as modules
+from ensdf.aabb import AABB
+from ensdf.raymarching import raymarch
 from ensdf.rendering.camera import OrbitingCamera
-from ensdf.rendering.aabb import AABB
-from ensdf.rendering.raymarching import raymarch
 from ensdf.rendering.shading import phong_shading, shade_normals
 from ensdf.utils import get_cuda_if_available
 
