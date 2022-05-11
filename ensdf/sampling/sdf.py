@@ -30,10 +30,12 @@ class SDFSampler:
 
     def extend_samples(self):
         if self.samples.shape[0] == 0:
-            iter_samples = torch.rand(SAMPLES_PER_ITER, 3,
-                                      dtype=torch.float,
-                                      device=self.device,
-                                      requires_grad=True)
+            iter_samples = torch.rand(
+                SAMPLES_PER_ITER, 3,
+                dtype=torch.float,
+                device=self.device,
+                requires_grad=True
+            )
             iter_samples = iter_samples * 2 - 1
         else:
             indices = torch.randint(self.samples.shape[0], (SAMPLES_PER_ITER,), device=self.device)
@@ -112,6 +114,8 @@ class SDFSampler:
                 self.extend_samples()
         
         self.first_yield = False
-        return {'points': self.samples.clone(),
-                'normals': self.sample_normals.clone(),
-                'sdf': self.sample_sdf.clone()}
+        return {
+            'points': self.samples.clone(),
+            'normals': self.sample_normals.clone(),
+            'sdf': self.sample_sdf.clone()
+        }
