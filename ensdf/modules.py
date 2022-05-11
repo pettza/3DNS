@@ -39,7 +39,7 @@ class SineLayer(nn.Module):
     
     def remove_weight_norm(self):
         if self.weight_norm:
-            self.linear - torch.nn.utils.remove_weight_norm(self.linear, name='weight')
+            self.linear = torch.nn.utils.remove_weight_norm(self.linear, name='weight')
             self.weight_norm = False
 
     def forward(self, input):
@@ -106,7 +106,7 @@ class Siren(nn.Module):
             
             self.weight_norm = True
     
-    def add_weight_norm(self):
+    def remove_weight_norm(self):
         if self.weight_norm:
             for i, mod in enumerate(self.net):
                 if isinstance(mod, SineLayer):
@@ -114,7 +114,7 @@ class Siren(nn.Module):
                 else:
                     self.net[i] = torch.nn.utils.remove_weight_norm(mod, name='weight')
             
-            self.weight_norm = True
+            self.weight_norm = False
 
     def freeze_parameters(self):                
         for param in self.parameters():
