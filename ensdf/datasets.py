@@ -124,9 +124,6 @@ class RegularizationDataset(DatasetBase):
         return {'points': sample_points}
 
 
-SAMPLER_BURNOUT_ITER = 10
-
-
 class SDFEditingDataset(DatasetBase):
     def __init__(
         self, model, brush : brushes.BrushBase, device,
