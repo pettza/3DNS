@@ -74,12 +74,11 @@ def main():
     model = modules.Siren.load(options.checkpoint_path)
     model.to(device)
 
-    sampler = SDFSampler(model, device, num_samples=options.num_samples)
-
-    # Burnout
-    samples = next(sampler)
-    for i in range(options.burnout_iterations - 1):
-        samples = next(sampler)
+    sampler = SDFSampler(
+        model, device,
+        num_samples=options.num_samples,
+        burnout_iters=options.burnout_iterations
+    )
 
     mesh = get_mesh(options, sampler)
 

@@ -16,17 +16,23 @@ SIGMA_PERTURB = 0.04
 
 
 class SDFSampler:
-    def __init__(self, model, device, num_samples):
+    def __init__(self, model, device, num_samples, burnout_iters=10):
         self.model = model
         self.device = device
         self.num_samples = num_samples
         self.first_yield = True  # Used in __next__
 
-        self.samples         = torch.zeros(0, 3, device=self.device)
-        self.sample_sdf      = torch.zeros(0, 1, device=self.device)
-        self.sample_normals  = torch.zeros(0, 3, device=self.device)
+        self.samples        = torch.zeros(0, 3, device=self.device)
+        self.sample_sdf     = torch.zeros(0, 1, device=self.device)
+        self.sample_normals = torch.zeros(0, 3, device=self.device)
 
         self.extend_samples()
+
+        self.burnout(burnout_iters)
+
+    def burnout(self, n_iters):
+        for i in range(n_iters):
+            next(self)
 
     def extend_samples(self):
         if self.samples.shape[0] == 0:
@@ -58,7 +64,7 @@ class SDFSampler:
             
             # Keep samples that are close enough
             iter_samples = iter_samples[(udf_pred < REFINEMENT_THRESHOLD) & inside_BB]
-            # From those choose randmly with replacements those to perturb
+            # From those choose randomly with replacements those to perturb
             indices = torch.randint(iter_samples.shape[0], (SAMPLES_PER_ITER,), device=self.device)
             iter_samples = torch.index_select(iter_samples, dim=0, index=indices)
             # Perturb samples for next iteration

@@ -151,9 +151,6 @@ class SDFEditingDataset(DatasetBase):
             self.device, self.num_model_samples
         )
         
-        for i in range(SAMPLER_BURNOUT_ITER):
-            next(self.sdf_sampler)
-        
         self.model_samples = None
         self.next_model_samples = next(self.sdf_sampler)
 
