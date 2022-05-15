@@ -95,7 +95,7 @@ def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
                 losses['implicit_reg_constraint'] += loss_functions.implicit_reg_loss(reg_normals) * 2.5e1
 
                 if include_empty_space_loss:
-                    losses['inter_constraint'] = loss_functions.empty_space_loss(reg_sdf) * 5e1
+                    losses['empty_space_constraint'] = loss_functions.empty_space_loss(reg_sdf) * 5e1
 
             total_loss = 0.
             for loss_name, loss in losses.items():
