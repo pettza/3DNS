@@ -34,9 +34,7 @@ def add_edit_training_options(arg_parser):
                        help='Number of epochs to train for.')
     group.add_argument('--regularization_samples', type=int, default=120_000,
                        help='Number of samples for regularization.')
-    group.add_argument('--epochs_til_ckpt', type=int, default=20,
-                       help='Time interval in seconds until checkpoint is saved.')
-    group.add_argument('--no_empty_space', action='store_false',
+    group.add_argument('--no_empty_space', action='store_true',
                        help='If specified, Empty space loss is not used.')
     group.add_argument('--ewc', action='store_true',
                        help='If specified, ewc loss is added.')
