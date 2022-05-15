@@ -79,9 +79,9 @@ def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
             sample_normals = gradient(sample_sdf, sample_points)
             
             losses = {
-                'sdf_contraint': loss_functions.sdf_loss(sample_sdf, gt_sdf) * 1.5e3,
-                'normal_constraint': loss_functions.normal_loss(sample_normals, gt_normals) * 5e1,
-                'implicit_reg_constraint': loss_functions.implicit_reg_loss(sample_normals) * 2.5e1
+                'sdf_loss': loss_functions.sdf_loss(sample_sdf, gt_sdf) * 1.5e3,
+                'normal_loss': loss_functions.normal_loss(sample_normals, gt_normals) * 5e1,
+                'implicit_reg_loss': loss_functions.implicit_reg_loss(sample_normals) * 2.5e1
             }
 
             if reg_dataset:
@@ -92,10 +92,10 @@ def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
                 reg_sdf = model(reg_points)
                 reg_normals = gradient(reg_sdf, reg_points) 
 
-                losses['implicit_reg_constraint'] += loss_functions.implicit_reg_loss(reg_normals) * 2.5e1
+                losses['implicit_reg_loss'] += loss_functions.implicit_reg_loss(reg_normals) * 2.5e1
 
                 if include_empty_space_loss:
-                    losses['empty_space_constraint'] = loss_functions.empty_space_loss(reg_sdf) * 5e1
+                    losses['empty_space_loss'] = loss_functions.empty_space_loss(reg_sdf) * 5e1
 
             total_loss = 0.
             for loss_name, loss in losses.items():
