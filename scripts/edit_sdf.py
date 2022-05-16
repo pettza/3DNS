@@ -48,6 +48,11 @@ def main():
     interaction_group.add_argument('--dz', type=float, default=-1.,
                                    help='Z component of direction of interaction ray')
 
+    interaction_group.add_argument('--brush_radius', type=float, default=0.08,
+                                    help='The radius of the brush')
+    interaction_group.add_argument('--brush_intensity', type=float, default=0.03,
+                                    help='The intensity of the brush')
+    
 
     options = arg_parser.parse_args()
 
@@ -66,19 +71,18 @@ def main():
         print("The specified ray doesn't intersect the surface")
         exit()
 
-    brush = SimpleBrush()
+    brush = SimpleBrush(radius=options.brush_radius, intensity=options.brush_intensity)
     brush.set_interaction(inter_point, inter_normal, inter_sdf)
 
     dataset = datasets.SDFEditingDataset(
-        model, brush, device,
-        sample_model_update_iters=10,
+        model, device, brush,
         num_interaction_samples=options.num_interaction_samples,
         num_model_samples=options.num_model_samples
     )
 
     training.train_sdf(
         model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
-        epochs_til_checkpoint=options.epochs_til_ckpt, pretrain_epochs=0,
+        epochs_til_checkpoint=options.num_epochs, pretrain_epochs=0,
         regularization_samples=options.regularization_samples,
         include_empty_space_loss=not options.no_empty_space,
         ewc=options.ewc, model_dir=options.model_dir, device=device
