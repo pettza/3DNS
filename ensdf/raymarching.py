@@ -77,14 +77,14 @@ def raymarch_single_ray(model, aabb, origin, direction, max_iter=40):
     # If ray is outside the bounding box, move it to where it intersects it
     hit, thit = aabb.intersect(origin, direction)
     inside_bb = aabb.contains(origin)
-    point = origin
+    point = origin.clone()
     if hit and not inside_bb:
         point = origin + thit * direction
     
     with torch.no_grad():
         for i in range(max_iter):
-            sdf = model(origin)
-            torch.addcmul(point, sdf, direction, out=origin)
+            sdf = model(point)
+            point.addcmul_(sdf, direction)
 
             ray_hit = sdf < RAYMARCH_CONVERGENCE_THRESHOLD
             if ray_hit:
