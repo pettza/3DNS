@@ -1,6 +1,4 @@
-from matplotlib.pyplot import get
 import torch
-import numpy as np
 import skimage.measure
 import trimesh
 
