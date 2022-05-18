@@ -2,15 +2,14 @@ import copy
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn.functional as F
 import numpy as np
 import trimesh
 
 from ensdf import brushes
 
-from .sampling import sample_uniform_sphere, sample_uniform_disk, sample_uniform_mesh
+from .sampling import sample_uniform_sphere, sample_uniform_mesh
 from .sampling.sdf import SDFSampler
-from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh, smoothfall, project_on_surface, tangent_grad
+from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh
 
 
 class DatasetBase(ABC):
@@ -126,16 +125,15 @@ class RegularizationDataset(DatasetBase):
 
 class SDFEditingDataset(DatasetBase):
     def __init__(
-        self, model, brush : brushes.BrushBase, device,
-        sample_model_update_iters,
+        self, model, device,
+        brush : brushes.BrushBase,
         num_interaction_samples,
         num_model_samples
     ):
         super().__init__()
 
-        self.model = model
+        self.model = copy.deepcopy(model)
         self.device = device
-        self.sample_model_update_iters = sample_model_update_iters
         self.iters = 0
 
         self.brush = brush
@@ -144,19 +142,22 @@ class SDFEditingDataset(DatasetBase):
         self.num_model_samples = num_model_samples
 
         self.sdf_sampler = SDFSampler(
-            copy.deepcopy(self.model),
+            self.model,
             self.device, self.num_model_samples
         )
         
         self.model_samples = None
         self.next_model_samples = next(self.sdf_sampler)
 
+    def update_model(self, model, sampler_iters=0):
+        self.model = copy.deepcopy(model)
+        self.sdf_sampler.model = self.model
+        self.sdf_sampler.burnout(sampler_iters)
+
     def sample(self):
         self.model_samples = self.next_model_samples
 
         self.iters += 1
-        if self.iters % self.sample_model_update_iters == 0:
-            self.sdf_sampler.model = copy.deepcopy(self.model)
 
         self.next_model_samples = next(self.sdf_sampler)
 
@@ -166,11 +167,12 @@ class SDFEditingDataset(DatasetBase):
         filtered_model_normals = self.model_samples['normals'][keep_cond]
         filtered_model_sdf     = self.model_samples['sdf'][keep_cond]
 
-        # self.num_interaction_samples = self.num_model_samples - filtered_model_points.shape[0]
+        num_interaction_samples = self.num_interaction_samples
+        # num_interaction_samples = self.num_model_samples - filtered_model_points.shape[0]
 
         # Interaction samples
         inter_points, inter_sdf, inter_normals = (
-            self.brush.sample_interaction(self.model, self.num_interaction_samples)
+            self.brush.sample_interaction(self.model, num_interaction_samples)
         )
 
         # Collect all samples
