@@ -87,7 +87,7 @@ class MeshDataset(DatasetBase):
         }
 
 
-class SphereSDFDataset(DatasetBase):
+class SphereDataset(DatasetBase):
     def __init__(self, radius, num_samples, device):
         super().__init__()
 

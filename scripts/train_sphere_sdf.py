@@ -26,7 +26,7 @@ def main():
     options = arg_parser.parse_args()
 
     device = get_cuda_if_available()
-    dataset = datasets.SphereSDFDataset(radius=options.radius,
+    dataset = datasets.SphereDataset(radius=options.radius,
                                         num_samples=options.surface_samples,
                                         device=device)
     model = modules.Siren(in_features=3, hidden_features=options.hidden_features,
