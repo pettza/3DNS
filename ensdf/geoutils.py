@@ -91,6 +91,12 @@ def tangent_grad(grad, normal):
     return res
 
 
+def intersect_plane(plane_normal, plane_center, points, directions):
+    denom = (plane_normal * directions).sum(-1, keepdim=True)
+    t = ((plane_center - points) * plane_normal).sum(-1, keepdim=True) / denom
+    return points + t * directions
+
+
 def lerp(x0, x1, t):
     y = torch.addcmul(x0, t, x0, value=-1)
     y.addcmul_(t, x1)
