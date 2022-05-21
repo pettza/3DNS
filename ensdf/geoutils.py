@@ -109,16 +109,23 @@ def slerp(x0, x1, t):
     return res
 
 
-def smoothfall(x, radius=1, return_derivative=False):
-    x = 1 - x / radius
-    x_sq = x ** 2
-    y = 3 * x_sq - 2 * x_sq * x
+def linear_fall(x, radius=1):
+    y = 1 - abs(x) / radius
+    y = F.relu(y)
+    return y
 
-    if return_derivative:
-        dy = 6 * (x_sq - x) / radius
-        return y, dy
-    else:
-        return y
+
+def cubic_fall(x, radius=1):
+    x = linear_fall(x, radius)
+    x_sq = x**2
+    y = 3 * x_sq - 2 * x_sq * x
+    return y
+
+
+def quintic_fall(x, radius=1):
+    x = linear_fall(x, radius)
+    y = x**3 * (x * (x * 6.0 - 15.0) + 10.0)
+    return y
 
 
 def euler_to_matrix(yaw, pitch, roll):

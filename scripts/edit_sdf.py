@@ -52,6 +52,8 @@ def main():
                                     help='The radius of the brush')
     interaction_group.add_argument('--brush_intensity', type=float, default=0.03,
                                     help='The intensity of the brush')
+    interaction_group.add_argument('--brush_type', choices=['linear', 'cubic', 'quintic'], default='quintic',
+                                    help='The type of the brush')
     
 
     options = arg_parser.parse_args()

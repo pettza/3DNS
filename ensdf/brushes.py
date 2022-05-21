@@ -4,7 +4,8 @@ import torch
 import torch.nn.functional as F
 
 from .sampling import sample_uniform_disk
-from .geoutils import project_on_surface, tangent_grad, smoothfall
+from .geoutils import project_on_surface, tangent_grad, linear_fall, cubic_fall, quintic_fall
+from .diff_operators import gradient
 
 
 class BrushBase(ABC):
@@ -19,7 +20,7 @@ class BrushBase(ABC):
         self.inter_sdf    = inter_sdf
 
     def inside_interaction(self, points):
-        return (points - self.inter_point).norm(dim=1) <= self.radius
+        return (points - self.inter_point).norm(dim=-1) <= self.radius
     
     @abstractmethod
     def sample_interaction(self, model, num_samples):
@@ -27,13 +28,37 @@ class BrushBase(ABC):
 
 
 class SimpleBrush(BrushBase):
+    def __init__(self, brush_type, **kwargs):
+        super().__init__(**kwargs)
+        self.brush_type = brush_type
+
+    @property
+    def brush_type(self):
+        return self._brush_type
+
+    @brush_type.setter
+    def brush_type(self, brush_type):
+        self._brush_type = brush_type
+
+        if brush_type == 'linear':
+            self.template = linear_fall
+        elif brush_type == 'cubic':
+            self.template = cubic_fall
+        elif brush_type == 'quintic':
+            self.template = quintic_fall
+        else:
+            raise ValueError(f'{brush_type} is not a valid type for {type(self).__name__}')
+    
     def sample_interaction(self, model, num_samples):
         disk_samples = sample_uniform_disk(self.inter_normal, num_samples)
         disk_samples = disk_samples.squeeze(0) * self.radius
         disk_sample_norms = torch.norm(disk_samples, dim=-1)
 
-        y, dy = smoothfall(disk_sample_norms, radius=self.radius, return_derivative=True)
-        y, dy = self.intensity * y.unsqueeze(1), self.intensity * dy.unsqueeze(1)
+        disk_sample_norms.requires_grad = True
+        y = self.intensity * self.template(disk_sample_norms, radius=self.radius)
+        dy = gradient(y, disk_sample_norms)
+        disk_sample_norms = disk_sample_norms.detach()
+        y, dy = y.detach().unsqueeze(-1), dy.detach().unsqueeze(-1)
 
         normals = F.normalize(disk_samples, dim=-1)
         normals.mul_(dy)
