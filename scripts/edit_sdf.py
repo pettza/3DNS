@@ -73,7 +73,11 @@ def main():
         print("The specified ray doesn't intersect the surface")
         exit()
 
-    brush = SimpleBrush(radius=options.brush_radius, intensity=options.brush_intensity)
+    brush = SimpleBrush(
+        brush_type=options.brush_type,
+        radius=options.brush_radius,
+        intensity=options.brush_intensity
+    )
     brush.set_interaction(inter_point, inter_normal, inter_sdf)
 
     dataset = datasets.SDFEditingDataset(
