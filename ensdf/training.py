@@ -30,36 +30,42 @@ def pretrain(model, num_samples, epochs, device):
         optim.step()
 
 
-def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
-              model_dir, device, pretrain_epochs=0, regularization_samples=0,
-              include_empty_space_loss=True, ewc=None):
+def train_sdf(
+    model, surface_dataset, epochs, lr,
+    device, pretrain_epochs=0, regularization_samples=0,
+    include_empty_space_loss=True, ewc=None,
+    model_dir=None, epochs_til_checkpoint=None
+):
+    epochs_til_checkpoint = epochs_til_checkpoint or epochs
+
     model.to(device)
     model.train()
     optim = torch.optim.Adam(lr=lr, params=model.parameters())
     reg_dataset = RegularizationDataset(regularization_samples, device) if regularization_samples > 0 else None
 
-    if os.path.exists(model_dir):
-        prompt = f'The model directory {model_dir} exists. Overwrite? (y/n): '
-        
-        val = input(prompt).lower()
-        while val not in {'y', 'n'}:
+    if model_dir is not None:
+        if os.path.exists(model_dir):
+            prompt = f'The model directory {model_dir} exists. Overwrite? (y/n): '
+            
             val = input(prompt).lower()
-        
-        if val == 'y':
-            shutil.rmtree(model_dir)
-        else:
-            print('Cannot proceed without valid directory')
-            exit()
+            while val not in {'y', 'n'}:
+                val = input(prompt).lower()
+            
+            if val == 'y':
+                shutil.rmtree(model_dir)
+            else:
+                print('Cannot proceed without valid directory')
+                exit()
 
-    os.makedirs(model_dir, exist_ok=True)
+        os.makedirs(model_dir, exist_ok=True)
 
-    summary_dir = os.path.join(model_dir, 'summary')
-    os.makedirs(summary_dir, exist_ok=True)
+        summary_dir = os.path.join(model_dir, 'summary')
+        os.makedirs(summary_dir, exist_ok=True)
 
-    checkpoints_dir = os.path.join(model_dir, 'checkpoints')
-    os.makedirs(checkpoints_dir, exist_ok=True)
+        checkpoints_dir = os.path.join(model_dir, 'checkpoints')
+        os.makedirs(checkpoints_dir, exist_ok=True)
 
-    writer = SummaryWriter(summary_dir)
+        writer = SummaryWriter(summary_dir)
 
     pretrain(model, regularization_samples, pretrain_epochs, device)
     
@@ -99,20 +105,26 @@ def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
 
             total_loss = 0.
             for loss_name, loss in losses.items():
-                writer.add_scalar(loss_name, loss, epoch)
+                if model_dir is not None:
+                    writer.add_scalar(loss_name, loss, epoch)
+                
                 total_loss += loss
 
+            if model_dir is not None:
+                writer.add_scalar('total_train_loss', total_loss, epoch)
+            
             train_losses.append(total_loss.item())
-            writer.add_scalar('total_train_loss', total_loss, epoch)
             
             if not epoch % epochs_til_checkpoint and epoch:
                 iteration_time = time.time() - start_time
                 tqdm.write(f'Epoch {epoch}, Total loss {total_loss:0.6f}, iteration time {iteration_time:0.6f}')
                 
-                model.save(os.path.join(checkpoints_dir, f'model_epoch_{epoch}.pth'))
-                np.savetxt(os.path.join(checkpoints_dir, f'train_losses_epoch_{epoch}.txt'),
-                           np.array(train_losses)
-                )
+                if model_dir is not None:
+                    model.save(os.path.join(checkpoints_dir, f'model_epoch_{epoch}.pth'))
+                    np.savetxt(
+                        os.path.join(checkpoints_dir, f'train_losses_epoch_{epoch}.txt'),
+                        np.array(train_losses)
+                    )
             
             optim.zero_grad()
             total_loss.backward()
@@ -120,6 +132,9 @@ def train_sdf(model, surface_dataset, epochs, lr, epochs_til_checkpoint,
 
             pbar.update(1)
 
-        model.save(os.path.join(checkpoints_dir, 'model_final.pth'))
-        np.savetxt(os.path.join(checkpoints_dir, 'train_losses_final.txt'),
-                   np.array(train_losses))
+        if model_dir is not None:
+            model.save(os.path.join(checkpoints_dir, 'model_final.pth'))
+            np.savetxt(
+                os.path.join(checkpoints_dir, 'train_losses_final.txt'),
+                np.array(train_losses)
+            )

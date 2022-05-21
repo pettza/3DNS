@@ -5,14 +5,13 @@ import configargparse
 def create_parser():
     arg_parser = configargparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True, help='Path to config file.')
-    arg_parser.add_argument('--model_dir', type=str, required=True,
-                            help='Name of directory where summaries and checkpoints will be saved.')
-    
     return arg_parser
 
 
 def add_training_options(arg_parser):
     group = arg_parser.add_argument_group('Training options')
+    group.add_argument('--model_dir', type=str, required=True,
+                       help='Name of directory where summaries and checkpoints will be saved.')
     group.add_argument('--lr', type=float, default=1e-4,
                        help='Learning rate.')
     group.add_argument('--num_epochs', type=int, default=1_000_000,
