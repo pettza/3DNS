@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from .diff_operators import divergence, gradient, laplace
+from .diff_operators import gradient, laplace
 from .sampling import sample_uniform_aabb
 
 
