@@ -25,18 +25,24 @@ def main():
     options = arg_parser.parse_args()
 
     device = get_cuda_if_available()
-    dataset = datasets.PointCloudDataset(point_cloud_path=options.point_cloud_path,
-                                         num_samples=options.surface_samples,
-                                         device=device)
-    model = modules.Siren(in_features=3, hidden_features=options.hidden_features,
-                          hidden_layers=options.hidden_layers, out_features=1,
-                          weight_norm=options.weight_norm,
-                          first_omega_0=30, outermost_linear=True)
+    dataset = datasets.PointCloudDataset(
+        point_cloud_path=options.point_cloud_path,
+        num_samples=options.surface_samples,
+        device=device
+    )
+    model = modules.Siren(
+        in_features=3, hidden_features=options.hidden_features,
+        hidden_layers=options.hidden_layers, out_features=1,
+        weight_norm=options.weight_norm,
+        first_omega_0=30, outermost_linear=True
+    )
 
-    training.train_sdf(model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
-                       epochs_til_checkpoint=options.epochs_til_ckpt, pretrain_epochs=options.pretrain_epochs,
-                       regularization_samples=options.regularization_samples,
-                       model_dir=options.model_dir, device=device)
+    training.train_sdf(
+        model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
+        epochs_til_checkpoint=options.epochs_til_ckpt, pretrain_epochs=options.pretrain_epochs,
+        regularization_samples=options.regularization_samples,
+        model_dir=options.model_dir, device=device
+    )
 
 
 if __name__ == '__main__':

@@ -157,3 +157,52 @@ def sample_uniform_aabb(aabb, num_samples):
     samples = 2 * aabb.half_extent * (samples - 0.5) + aabb.center
 
     return samples
+
+
+def sample_uniform_torus(major_radius, minor_radius, num_samples, device):
+    '''
+    Uniformly samples a torus using rejection sampling
+
+    Args:
+        major_radius (float): the major radius of the torus
+        minor_radius (float): the minor radius of the torus
+        num_samples (int): the number of samples
+        device (torch.device): the device of the returned tensor
+
+    Returns:
+        (torch.Tensor, torch.Tensor): A tuple with the sampled points and their normals
+        both with shape [num_samples, 3]
+    '''
+    counter = 0
+    accepted_points = []
+    accepted_normals = []
+
+    while counter < num_samples:
+        remaining_samples = num_samples - counter
+        points = torch.empty(remaining_samples, 3, device=device)
+        normals = torch.empty(remaining_samples, 3, device=device)
+
+        uvw = torch.rand(remaining_samples, 3, device=device)
+        theta = 2 * torch.pi * uvw[:, 0]
+        phi = 2 * torch.pi * uvw[:, 1]
+        
+        t = major_radius + minor_radius * torch.cos(theta)
+        points[:, 0] = t * torch.cos(phi)
+        points[:, 1] = minor_radius * torch.sin(theta) # y is up
+        points[:, 2] = t * torch.sin(phi)
+
+        normals[:, 0] = torch.cos(theta) * torch.cos(phi)
+        normals[:, 1] = torch.sin(theta)
+        normals[:, 2] = torch.cos(theta) * torch.sin(phi)
+
+        denom = major_radius + minor_radius
+        cond = uvw[:, 2] <= t / denom
+
+        accepted_points.append(points[cond])
+        accepted_normals.append(normals[cond])
+        counter += accepted_points[-1].shape[0]
+
+    points = torch.concat(accepted_points)
+    normals = torch.concat(accepted_normals)
+
+    return points, normals

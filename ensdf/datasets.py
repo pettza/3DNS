@@ -1,5 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
+from os import major
 
 import torch
 import numpy as np
@@ -7,14 +8,14 @@ import trimesh
 
 from ensdf import brushes
 
-from .sampling import sample_uniform_sphere, sample_uniform_mesh
+from .sampling import sample_uniform_sphere, sample_uniform_mesh, sample_uniform_torus
 from .sampling.sdf import SDFSampler
 from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh
 
 
 class DatasetBase(ABC):
     @abstractmethod
-    def sample(self):
+    def sample(self, num_samples=None):
         raise NotImplemented
 
 
@@ -92,14 +93,38 @@ class SphereDataset(DatasetBase):
         super().__init__()
 
         self.num_samples = num_samples
-        self.device = device
         self.radius = radius
+        self.device = device
 
     def sample(self, num_samples=None):
         num_samples = num_samples or self.num_samples
 
         sample_normals = sample_uniform_sphere(num_samples, self.device)
         sample_points = self.radius * sample_normals
+        sample_sdf = torch.zeros(num_samples, 1, device=self.device)
+
+        return {
+            'points': sample_points,
+            'sdf': sample_sdf,
+            'normals': sample_normals
+        }
+
+
+class TorusDataset(DatasetBase):
+    def __init__(self, major_radius, minor_radius, num_samples, device):
+        super().__init__()
+
+        self.num_samples = num_samples
+        self.major_radius = major_radius
+        self.minor_radius = minor_radius
+        self.device = device
+
+    def sample(self, num_samples):
+        num_samples = num_samples or self.num_samples
+
+        sample_points, sample_normals = sample_uniform_torus(
+            self.major_radius, self.minor_radius, num_samples, self.device
+        )
         sample_sdf = torch.zeros(num_samples, 1, device=self.device)
 
         return {
@@ -154,7 +179,7 @@ class SDFEditingDataset(DatasetBase):
         self.sdf_sampler.model = self.model
         self.sdf_sampler.burnout(sampler_iters)
 
-    def sample(self):
+    def sample(self, num_samples=None):
         self.model_samples = self.next_model_samples
 
         self.iters += 1

@@ -20,14 +20,17 @@ def main():
     dataset_group = arg_parser.add_argument_group('Dataset options')
     dataset_group.add_argument('--surface_samples', type=int, default=120_000,
                                help='Number of on surface samples per training iteration.')
-    dataset_group.add_argument('--radius', type=float, default=0.8,
-                               help='The radius of the sphere. Should be < 1.')
+    dataset_group.add_argument('--major_radius', type=float, default=0.5,
+                               help='The major radius of the torus')
+    dataset_group.add_argument('--minor_radius', type=float, default=0.15,
+                               help='The minor radius of the torus')
 
     options = arg_parser.parse_args()
 
     device = get_cuda_if_available()
-    dataset = datasets.SphereDataset(
-        radius=options.radius,
+    dataset = datasets.TorusDataset(
+        major_radius=options.major_radius,
+        minor_radius=options.minor_radius,
         num_samples=options.surface_samples,
         device=device
     )
