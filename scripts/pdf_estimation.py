@@ -3,21 +3,22 @@ import os
 
 import torch
 import numpy as np
+import argparse
 import configargparse
 import trimesh
-import trimesh.smoothing
+from trimesh.smoothing import filter_humphrey
 import matplotlib.pyplot as plt
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import modules
 from ensdf.sampling.sdf import SDFSampler
-from ensdf.utils import get_cuda_if_available, triangle_area
+from ensdf.utils import get_cuda_if_available
 from ensdf.meshing import marching_cubes, ball_pivoting
+from ensdf.geoutils import triangle_area
 
 
-arg_parser = configargparse.ArgumentParser()
+arg_parser = configargparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True, help='Path to config file.')
-
 
 # Model options
 arg_parser.add_argument('--checkpoint_path', type=str, required=True,
@@ -62,7 +63,7 @@ def get_mesh(options, sampler):
 
     # If neither then marching cubes was selected
     mesh = marching_cubes(sampler.model, options.marching_cubes)
-    trimesh.smoothing.filter_humphrey(mesh)
+    filter_humphrey(mesh)
     return mesh
 
 
