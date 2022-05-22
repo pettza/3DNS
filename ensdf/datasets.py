@@ -119,7 +119,7 @@ class TorusDataset(DatasetBase):
         self.minor_radius = minor_radius
         self.device = device
 
-    def sample(self, num_samples):
+    def sample(self, num_samples=None):
         num_samples = num_samples or self.num_samples
 
         sample_points, sample_normals = sample_uniform_torus(
