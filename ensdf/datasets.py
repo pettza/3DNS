@@ -1,6 +1,5 @@
 import copy
 from abc import ABC, abstractmethod
-from os import major
 
 import torch
 import numpy as np
@@ -8,7 +7,8 @@ import trimesh
 
 from ensdf import brushes
 
-from .sampling import sample_uniform_sphere, sample_uniform_mesh, sample_uniform_torus
+from .sampling import sample_uniform_sphere, sample_uniform_mesh, sample_uniform_torus, sample_uniform_aabb
+from .aabb import AABB
 from .sampling.sdf import SDFSampler
 from .geoutils import triangle_area, normalize_point_cloud, normalize_trimesh
 
@@ -138,14 +138,16 @@ class RegularizationDataset(DatasetBase):
     def __init__(self, num_samples, device):
         super().__init__()
 
+        half_extent = 1.15
+        self.aabb = AABB([0., 0., 0.], [half_extent] * 3, device)
         self.num_samples = num_samples
         self.device = device
 
     def sample(self, num_samples=None):
         num_samples = num_samples or self.num_samples
-        sample_points = 2.3 * torch.rand(self.num_samples, 3, device=self.device) - 1.15
+        points = sample_uniform_aabb(self.aabb, num_samples)
 
-        return {'points': sample_points}
+        return {'points': points}
 
 
 class SDFEditingDataset(DatasetBase):
