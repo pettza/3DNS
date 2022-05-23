@@ -1,8 +1,6 @@
 import sys
 import os
 
-import torch
-
 from options import create_parser, add_training_options, add_model_options
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
