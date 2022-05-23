@@ -9,28 +9,40 @@ class SineLayer(nn.Module):
     Linear layer with sine non-linearity
     omega_0 is the factor explained in the SIREN paper
     """
-    
-    def __init__(self, in_features, out_features,
-                 bias=True, weight_norm=False,
-                 is_first=False, omega_0=30):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        weight_norm=False,
+        is_first=False,
+        omega_0=30
+    ):
         super().__init__()
         self.omega_0 = omega_0
         self.is_first = is_first
-        self.weight_norm = False
         
         self.in_features = in_features
         self.linear = nn.Linear(in_features, out_features, bias=bias)
         
         self.init_weights()
+
+        self.weight_norm = False
+        if weight_norm:
+            self.add_weight_norm()
     
     def init_weights(self):
         with torch.no_grad():
             if self.is_first:
-                self.linear.weight.uniform_(-1 / self.in_features,
-                                             1 / self.in_features)
+                self.linear.weight.uniform_(
+                    -1 / self.in_features,
+                    1 / self.in_features
+                )
             else:
-                self.linear.weight.uniform_(-np.sqrt(6 / self.in_features) / self.omega_0,
-                                             np.sqrt(6 / self.in_features) / self.omega_0)
+                self.linear.weight.uniform_(
+                    -np.sqrt(6 / self.in_features) / self.omega_0,
+                    np.sqrt(6 / self.in_features) / self.omega_0
+                )
     
     def add_weight_norm(self):
         if not self.weight_norm:
@@ -52,9 +64,17 @@ class SineLayer(nn.Module):
 
 
 class Siren(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features,
-                 hidden_layers = None, outermost_linear=False,
-                 weight_norm=False, first_omega_0=30, hidden_omega_0=30):
+    def __init__(
+        self,
+        in_features,
+        hidden_features,
+        out_features,
+        hidden_layers=None,
+        outermost_linear=False,
+        weight_norm=False,
+        first_omega_0=30,
+        hidden_omega_0=30
+    ):
         super().__init__()
         
         # If hidden_features is not a list, make it a list whose elements are all
@@ -70,29 +90,48 @@ class Siren(nn.Module):
         self.outermost_linear = outermost_linear
         self.first_omega_0 = first_omega_0
         self.hidden_omega_0 = hidden_omega_0
-        self.weight_norm = False
         
         self.net = []
         features = [in_features] + hidden_features + [out_features]
 
-        self.net.append(SineLayer(features[0], features[1], is_first=True, omega_0=first_omega_0))    
+        self.net.append(
+            SineLayer(
+                features[0], features[1],
+                is_first=True,
+                omega_0=first_omega_0
+            )
+        )
         for f_in, f_out in zip(features[1:-2], features[2:-1]):
-            self.net.append(SineLayer(f_in, f_out, is_first=False, omega_0=hidden_omega_0))
+            self.net.append(
+                SineLayer(
+                    f_in, f_out,
+                    is_first=False,
+                    omega_0=hidden_omega_0
+                )
+            )
         
         if outermost_linear:
             final_linear = nn.Linear(features[-2], features[-1])
             
             with torch.no_grad():
-                final_linear.weight.uniform_(-np.sqrt(6 / features[-2]) / hidden_omega_0, 
-                                             np.sqrt(6 / features[-2]) / hidden_omega_0)
+                final_linear.weight.uniform_(
+                    -np.sqrt(6 / features[-2]) / hidden_omega_0, 
+                    np.sqrt(6 / features[-2]) / hidden_omega_0
+                )
                 
             self.net.append(final_linear)
         else:
-            self.net.append(SineLayer(features[-2], features[-1],
-                                      is_first=False, omega_0=hidden_omega_0))
+            self.net.append(
+                SineLayer(
+                    features[-2], features[-1],
+                    is_first=False,
+                    omega_0=hidden_omega_0
+                )
+            )
           
         self.net = nn.Sequential(*self.net)
 
+        self.weight_norm = False
         if weight_norm:
             self.add_weight_norm()
 
@@ -116,11 +155,11 @@ class Siren(nn.Module):
             
             self.weight_norm = False
 
-    def freeze_parameters(self):                
+    def freeze_parameters(self):
         for param in self.parameters():
             param.required_grad = False
 
-    def ufreeze_parameters(self):                
+    def ufreeze_parameters(self):
         for param in self.parameters():
             param.required_grad = True
 
@@ -171,11 +210,13 @@ class Siren(nn.Module):
     @staticmethod
     def load(path):
         checkpoint = torch.load(path)
-        model = Siren(in_features=3, hidden_features=checkpoint['hidden_features'], out_features=1,
-                      outermost_linear=checkpoint['outermost_linear'],
-                      first_omega_0=checkpoint['first_omega_0'],
-                      hidden_omega_0=checkpoint['hidden_omega_0'],
-                      weight_norm=checkpoint['weight_norm'])
+        model = Siren(
+            in_features=3, hidden_features=checkpoint['hidden_features'], out_features=1,
+            outermost_linear=checkpoint['outermost_linear'],
+            first_omega_0=checkpoint['first_omega_0'],
+            hidden_omega_0=checkpoint['hidden_omega_0'],
+            weight_norm=checkpoint['weight_norm']
+        )
         model.load_state_dict(checkpoint['state_dict'])
         
         return model
