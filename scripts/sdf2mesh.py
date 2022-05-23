@@ -1,8 +1,9 @@
 import sys
 import os
 
-import configargparse
 import torch
+
+from options import create_parser
 
 sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 from ensdf import modules
@@ -12,8 +13,7 @@ from ensdf.utils import get_cuda_if_available
 
 
 def main():
-    arg_parser = configargparse.ArgumentParser()
-    arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True, help='Path to config file.')
+    arg_parser = create_parser()
     arg_parser.add_argument('--mesh_path', type=str,
                             help='The name of the output file')
     arg_parser.add_argument('--show', action='store_true',
