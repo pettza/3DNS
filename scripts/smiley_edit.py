@@ -18,13 +18,12 @@ from ensdf.geoutils import spherical_to_cartesian
 def main():
     arg_parser = create_parser()
     arg_parser.add_argument('--sphere_model_path', type=str, required=True,
-                            help='Path to pretrained sphere model.')    
+                            help='Path to pretrained sphere model.')
 
     options = arg_parser.parse_args()
 
     device = get_cuda_if_available()
     model = modules.Siren.load(options.sphere_model_path)
-    # model = modules.Siren.load("models/sphere_r06_2_128/checkpoints/model_final.pth")
     model.to(device)
     aabb = AABB([0., 0., 0.], [1., 1., 1.], device=device)
     brush = SimpleBrush(
