@@ -2,12 +2,14 @@ import sys
 import os
 
 import torch
+import ensdf
 
 from options import create_parser, add_training_options, add_model_options
 from ensdf.utils import get_cuda_if_available
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import datasets, training, modules
+from ensdf.meshing import marching_cubes
 from ensdf.utils import get_cuda_if_available
 
 
@@ -44,6 +46,9 @@ def main():
         regularization_samples=options.regularization_samples,
         model_dir=options.model_dir, device=device
     )
+    
+    mesh = marching_cubes(model)
+    mesh.export(os.path.join(options.model_dir, 'mesh', 'mesh.ply'))
 
 
 if __name__ == '__main__':
