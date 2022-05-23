@@ -15,7 +15,7 @@ def main():
     arg_parser = configargparse.ArgumentParser()
     arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True, help='Path to config file.')
     arg_parser.add_argument('--mesh_path', type=str,
-                            help='The name of output file')
+                            help='The name of the output file')
     arg_parser.add_argument('--show', action='store_true',
                             help='Show the mesh before exitng')
 
@@ -57,7 +57,8 @@ def main():
 
     mesh.export(options.mesh_path)
 
-    mesh.show()
+    if options.show:
+        mesh.show()
 
 
 if __name__ == '__main__':
