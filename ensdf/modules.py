@@ -79,7 +79,7 @@ class Siren(nn.Module):
         
         # If hidden_features is not a list, make it a list whose elements are all
         # equal to hidden_features and of length hidden_layers, so that it can be
-        # handled int the same way
+        # handled in the same way
         if not isinstance(hidden_features, list):
             if hidden_layers is not None:
                 hidden_features = [hidden_features] * hidden_layers
