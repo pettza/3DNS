@@ -45,7 +45,9 @@ def main():
     )
 
     mesh = marching_cubes(model)
-    mesh.export(os.path.join(options.model_dir, 'mesh', 'mesh.ply'))
+    mesh_dir = os.path.join(options.model_dir, 'mesh')
+    os.mkdir(mesh_dir)
+    mesh.export(os.path.join(mesh_dir, 'mesh.ply'))
 
 
 if __name__ == '__main__':
