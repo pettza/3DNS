@@ -9,6 +9,7 @@ import os
 import shutil
 
 from . import loss_functions
+from .ewc.ewc import EWC
 from .datasets import RegularizationDataset
 from .diff_operators import gradient
 
@@ -69,6 +70,13 @@ def train_sdf(
 
     pretrain(model, regularization_samples, pretrain_epochs, device)
     
+    if ewc:
+        t = RegularizationDataset(200_000, device)
+        ewc_samples = t.sample()['points']
+        ewc = EWC(model, ewc_samples, lambda m, s: m(s))
+    else:
+        ewc = None
+
     total_steps = 0
     with tqdm(total=epochs) as pbar:
         train_losses = []
@@ -102,6 +110,10 @@ def train_sdf(
 
                 if include_empty_space_loss:
                     losses['empty_space_loss'] = loss_functions.empty_space_loss(reg_sdf) * 5e1
+
+            if ewc:
+                ewc_loss = ewc.loss(model)
+                losses['ewc_loss'] = ewc_loss * 1.5e1
 
             total_loss = 0.
             for loss_name, loss in losses.items():
