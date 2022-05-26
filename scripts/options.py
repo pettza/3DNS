@@ -27,6 +27,8 @@ def add_training_options(arg_parser):
 
 def add_edit_training_options(arg_parser):
     group = arg_parser.add_argument_group('Training options')
+    group.add_argument('--model_dir', type=str, required=True,
+                       help='Name of directory where summaries and checkpoints will be saved.')
     group.add_argument('--lr', type=float, default=1e-4,
                        help='Learning rate.')
     group.add_argument('--num_epochs', type=int, default=20,
