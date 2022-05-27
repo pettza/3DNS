@@ -1,6 +1,6 @@
-from curses import nonl
 import sys
 import os
+from copy import deepcopy
 
 import torch
 import torch.nn.functional as F
@@ -44,6 +44,7 @@ class ENSDFWindow(pyglet.window.Window):
 
         self.model = modules.Siren.load(sys.argv[1])
         self.model.to(self.device)
+        self.prev_model = self.model
 
         self.aabb = AABB([0., 0., 0.], [1., 1., 1.], device=self.device)
         self.camera = OrbitingCamera(np.deg2rad(60), self.resolution, np.deg2rad(0), np.deg2rad(90), 3.2)
@@ -144,6 +145,11 @@ class ENSDFWindow(pyglet.window.Window):
             elif symbol == key.ENTER:
                 model_path = input('Model path: ').strip()
                 self.model.save(model_path)
+            elif symbol == key.Z:
+                if self.model is not self.prev_model:
+                    self.model = self.prev_model
+                    self.edit_dataset.update_model(self.model, sampler_iters=10)
+                    self.retrace = True
         else:    
             if symbol == key.UP:
                 self.camera.theta -= np.pi / 10
@@ -177,6 +183,7 @@ class ENSDFWindow(pyglet.window.Window):
     
     def on_mouse_press(self, x, y, button, modifiers):
         if button == mouse.LEFT and self.valid_interaction(x, y):
+            self.prev_model = deepcopy(self.model)
             train_sdf(
                 model=self.model,
                 surface_dataset=self.edit_dataset,
