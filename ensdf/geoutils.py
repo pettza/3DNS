@@ -115,22 +115,28 @@ def slerp(x0, x1, t):
     return res
 
 
-def linear_fall(x, radius=1):
-    y = 1 - abs(x) / radius
+def linear_fall(x):
+    y = 1 - abs(x)
     y = F.relu(y)
     return y
 
 
-def cubic_fall(x, radius=1):
-    x = linear_fall(x, radius)
+def cubic_fall(x):
+    x = linear_fall(x)
     x_sq = x**2
     y = 3 * x_sq - 2 * x_sq * x
     return y
 
 
-def quintic_fall(x, radius=1):
-    x = linear_fall(x, radius)
+def quintic_fall(x):
+    x = linear_fall(x)
     y = x**3 * (x * (x * 6.0 - 15.0) + 10.0)
+    return y
+
+def exp_fall(x):
+    t = 1 - x**2
+    t = F.relu(t)
+    y = torch.exp(-1 / t)
     return y
 
 

@@ -52,8 +52,11 @@ class ENSDFWindow(pyglet.window.Window):
         self.background_color = torch.tensor([0.2, 0.2, 0.2], device=self.device).view(1, 1, 3)
         self.light_colors = torch.tensor([1., 1., 1.], device=self.device)
 
+        self.brush_types = ['linear', 'cubic', 'quintic', 'exp']
+        self.brush_type_idx = 2 # quintic
+
         self.brush = SimpleBrush(
-            brush_type='quintic',
+            brush_type=self.brush_types[self.brush_type_idx],
             radius=0.08,
             intensity=0.04
         )
@@ -129,7 +132,18 @@ class ENSDFWindow(pyglet.window.Window):
         return cond
 
     def on_key_press(self, symbol, modifiers):
-        if modifiers & key.MOD_CTRL:
+        if modifiers & key.MOD_ALT:
+            if symbol == key.UP:
+                self.brush_type_idx += 1
+                self.brush_type_idx %= len(self.brush_types)
+                self.brush.brush_type = self.brush_types[self.brush_type_idx]
+                self.print_brush()
+            elif symbol == key.DOWN:
+                self.brush_type_idx -= 1
+                self.brush_type_idx %= len(self.brush_types)
+                self.brush.brush_type = self.brush_types[self.brush_type_idx]
+                self.print_brush()
+        elif modifiers & key.MOD_CTRL:
             if symbol == key.UP:
                 self.brush.radius += 0.01
                 self.print_brush()

@@ -6,7 +6,7 @@ import trimesh
 
 from .sampling import sample_uniform_disk
 from .geoutils import project_on_surface, tangent_grad, intersect_plane, \
-                      linear_fall, cubic_fall, quintic_fall
+                      linear_fall, cubic_fall, quintic_fall, exp_fall
 from .diff_operators import gradient
 
 
@@ -48,13 +48,15 @@ class SimpleBrush(BrushBase):
             self.template = cubic_fall
         elif brush_type == 'quintic':
             self.template = quintic_fall
+        elif brush_type == 'exp':
+            self.template = exp_fall
         else:
             raise ValueError(f'{brush_type} is not a valid type for {type(self).__name__}')
     
     def evaluate_template_on_tangent_disk(self, disk_points):
         disk_sample_norms = torch.norm(disk_points, dim=-1)
         disk_sample_norms.requires_grad = True
-        y = self.intensity * self.template(disk_sample_norms, radius=self.radius)
+        y = self.intensity * self.template(disk_sample_norms / self.radius)
         dy = gradient(y, disk_sample_norms)
         y, dy = y.detach().unsqueeze(-1), dy.detach().unsqueeze(-1)
 
