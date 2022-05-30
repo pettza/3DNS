@@ -9,7 +9,7 @@ from .diff_operators import gradient
 RAYMARCH_CONVERGENCE_THRESHOLD = 0.001
 
 
-def raymarch(model, aabb, origins, directions, batch_size=1<<18, num_iter=40):
+def raymarch(model, aabb, origins, directions, batch_size=1<<16, num_iter=40):
     model.eval()
 
     device = origins.device
