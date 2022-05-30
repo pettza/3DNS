@@ -1,7 +1,9 @@
+from copy import deepcopy
+from collections import OrderedDict
+
 import torch
 from torch import nn
 import numpy as np
-from collections import OrderedDict
 
 
 class SineLayer(nn.Module):
@@ -86,6 +88,8 @@ class Siren(nn.Module):
             else:
                 raise ValueError("If hidden_features is not a list, hidden_layers should be specified.")
         
+        self.in_features = in_features
+        self.out_features = out_features
         self.hidden_features = hidden_features
         self.outermost_linear = outermost_linear
         self.first_omega_0 = first_omega_0
@@ -195,9 +199,34 @@ class Siren(nn.Module):
 
         return {'model_in': x, 'model_out': activations.popitem(), 'activations': activations}
     
+    def __deepcopy__(self, memo=None):
+        weight_norm = self.weight_norm
+        device = list(self.parameters())[0].device
+        self.remove_weight_norm()
+        
+        c = self.__class__(
+            in_features=self.in_features,
+            hidden_features=self.hidden_features,
+            out_features=self.out_features,
+            outermost_linear=self.outermost_linear,
+            weight_norm=self.weight_norm,
+            first_omega_0=self.first_omega_0,
+            hidden_omega_0=self.hidden_omega_0
+        )
+        c.load_state_dict(deepcopy(self.state_dict(), memo))
+        c.to(device)
+
+        if weight_norm:
+            self.add_weight_norm()
+            c.add_weight_norm()
+        
+        return c
+
     def save(self, path):
         torch.save(
             {
+                'in_features':      self.in_features,
+                'out_features':     self.out_features,
                 'hidden_features':  self.hidden_features,
                 'outermost_linear': self.outermost_linear,
                 'first_omega_0':    self.first_omega_0,
@@ -211,7 +240,9 @@ class Siren(nn.Module):
     def load(path):
         checkpoint = torch.load(path)
         model = Siren(
-            in_features=3, hidden_features=checkpoint['hidden_features'], out_features=1,
+            in_features=checkpoint['in_features'],
+            hidden_features=checkpoint['hidden_features'],
+            out_features=checkpoint['out_features'],
             outermost_linear=checkpoint['outermost_linear'],
             first_omega_0=checkpoint['first_omega_0'],
             hidden_omega_0=checkpoint['hidden_omega_0'],
