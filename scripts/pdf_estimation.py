@@ -6,6 +6,7 @@ import numpy as np
 import trimesh
 from trimesh.smoothing import filter_humphrey
 import matplotlib.pyplot as plt
+from tqdm.autonotebook import tqdm
 
 from options import create_parser
 
@@ -50,11 +51,13 @@ def main():
                             help='Number of iterations for estimation')
 
     # Sampler options
-    sampler_group = arg_parser.add_argument_group('Samples options')
+    sampler_group = arg_parser.add_argument_group('Sampler options')
     sampler_group.add_argument('--num_samples', type=int, default=10000,
-                            help='Number of samples per iteration for SDF sampler')
+                               help='Number of samples per iteration for SDF sampler')
     sampler_group.add_argument('--burnout_iterations', type=int, default=10,
-                            help='Number of iterations before starting using them for estimation')
+                               help='Number of iterations before starting using them for estimation')
+    sampler_group.add_argument('--naive', action='store_true',
+                               help='Use naive way of sampling')
 
     # Mesh options
     mesh_arg_group = arg_parser.add_argument_group('Mesh options')
@@ -92,7 +95,13 @@ def main():
     
     # Compute histogram on triangles
     hist = np.zeros((triangles.shape[0]))
-    for i in range(options.num_iterations):
+    for i in tqdm(range(options.num_iterations)):
+        if options.naive:
+            sampler = SDFSampler(
+                model, device,
+                num_samples=options.num_samples,
+                burnout_iters=0
+            )
         points = next(sampler)['points'].detach().cpu().numpy()
 
         closest, dist, triangle_ids = prox.on_surface(points)
@@ -115,9 +124,13 @@ def main():
 
     print(f'Number of triangles: {hist.shape[0]}')
     fig, ax = plt.subplots()
-    ax.hist(densities, bins='auto')
+    n_bins = 100
+    low, high = 0., 1.5
+    bins = np.linspace(low, high, n_bins)
+    ax.hist(densities, bins=bins)
     ax.axvline(x=inv_area, color='red', linestyle='--')
     ax.set_xticks(ax.get_xticks() + [inv_area])
+    ax.set_xlim(low, high)
     plt.show()
 
 
