@@ -136,7 +136,7 @@ def quintic_fall(x):
 def exp_fall(x):
     t = 1 - x**2
     t = F.relu(t)
-    y = torch.exp(-1 / t)
+    y = torch.exp(1 - 1 / t)
     return y
 
 
