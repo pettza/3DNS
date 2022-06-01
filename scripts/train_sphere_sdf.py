@@ -2,7 +2,6 @@ import sys
 import os
 
 from options import create_parser, add_training_options, add_model_options
-from ensdf.utils import get_cuda_if_available
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import datasets, training, modules
