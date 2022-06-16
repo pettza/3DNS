@@ -195,8 +195,8 @@ def sample_uniform_torus(major_radius, minor_radius, num_samples, device):
         normals[:, 1] = torch.sin(theta)
         normals[:, 2] = torch.cos(theta) * torch.sin(phi)
 
-        denom = major_radius + minor_radius
-        cond = uvw[:, 2] <= t / denom
+        inv_denom = major_radius / (major_radius + minor_radius)
+        cond = uvw[:, 2] <= t * inv_denom
 
         accepted_points.append(points[cond])
         accepted_normals.append(normals[cond])
