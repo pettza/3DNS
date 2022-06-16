@@ -25,7 +25,7 @@ from ensdf.utils import get_cuda_if_available
 
 
 class ENSDFWindow(pyglet.window.Window):
-    def __init__(self, resolution=(1280, 720), epochs_per_edit=40):
+    def __init__(self, resolution=(1280, 720), epochs_per_edit=80):
         super().__init__(caption="SDF Viewer", width=resolution[0], height=resolution[1])
 
         self.resolution = resolution
