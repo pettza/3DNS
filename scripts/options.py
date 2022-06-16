@@ -4,7 +4,17 @@ import configargparse
 
 def create_parser():
     arg_parser = configargparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True, help='Path to config file.')
+    arg_parser.add('-c', '--config_filepath', required=False, is_config_file=True,
+                   help='Path to config file.')
+    return arg_parser
+
+
+def create_edit_parser():
+    arg_parser = create_parser()
+    add_edit_training_options(arg_parser)
+    add_pretrained_model_options(arg_parser)
+    add_edit_dataset_options(arg_parser)
+    add_interaction_options(arg_parser)
     return arg_parser
 
 
@@ -39,6 +49,47 @@ def add_edit_training_options(arg_parser):
                        help='If specified, Empty space loss is not used.')
     group.add_argument('--ewc', action='store_true',
                        help='If specified, ewc loss is added.')
+    return group
+
+
+def add_edit_dataset_options(arg_parser):
+    group = arg_parser.add_argument_group('Dataset options')
+    group.add_argument('--num_interaction_samples', type=int, default=5000,
+                       help='Number of samples for interaction.')
+    group.add_argument('--num_model_samples', type=int, default=120000,
+                       help='Number of samples from pretrained model.')
+    return group
+
+
+def add_pretrained_model_options(arg_parser):
+    group = arg_parser.add_argument_group('Model options')
+    group.add_argument('--model_path', type=str, required=True,
+                       help='Path to pretrained model.')
+    return group
+
+
+def add_interaction_options(arg_parser):
+    group = arg_parser.add_argument_group('Interaction options')
+    group.add_argument('--ox', type=float, default=0.,
+                       help='X component of origin of interaction ray')
+    group.add_argument('--oy', type=float, default=0.,
+                       help='Y component of origin of interaction ray')
+    group.add_argument('--oz', type=float, default=0.9,
+                       help='Z component of origin of interaction ray')
+
+    group.add_argument('--dx', type=float, default=0.,
+                       help='X component of direction of interaction ray')
+    group.add_argument('--dy', type=float, default=0.,
+                       help='Y component of direction of interaction ray')
+    group.add_argument('--dz', type=float, default=-1.,
+                       help='Z component of direction of interaction ray')
+
+    group.add_argument('--brush_radius', type=float, default=0.08,
+                       help='The radius of the brush')
+    group.add_argument('--brush_intensity', type=float, default=0.03,
+                       help='The intensity of the brush')
+    group.add_argument('--brush_type', choices=['linear', 'cubic', 'quintic', 'exp'], default='quintic',
+                       help='The type of the brush')
     return group
 
 

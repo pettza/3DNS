@@ -3,7 +3,7 @@ import os
 
 import torch
 
-from options import create_parser, add_edit_training_options
+from options import create_edit_parser
 
 sys.path.append( os.path.dirname( os.path.dirname(os.path.abspath(__file__) ) ) )
 from ensdf import datasets, training, modules
@@ -14,47 +14,7 @@ from ensdf.brushes import SimpleBrush
 
 
 def main():
-    arg_parser = create_parser()
-    add_edit_training_options(arg_parser)
-
-
-    # Model options
-    model_group = arg_parser.add_argument_group('Model options')
-    model_group.add_argument('--model_path', type=str, required=True,
-                             help='Path to pretrained model.')
-
-
-    # Dataset options
-    dataset_group = arg_parser.add_argument_group('Dataset options')
-    dataset_group.add_argument('--num_interaction_samples', type=int, default=5000,
-                               help='Number of samples for interaction.')
-    dataset_group.add_argument('--num_model_samples', type=int, default=120000,
-                               help='Number of samples from pretrained model.')
-
-
-    # Interaction options
-    interaction_group = arg_parser.add_argument_group('Interaction options')
-    interaction_group.add_argument('--ox', type=float, default=0.,
-                                   help='X component of origin of interaction ray')
-    interaction_group.add_argument('--oy', type=float, default=0.,
-                                   help='Y component of origin of interaction ray')
-    interaction_group.add_argument('--oz', type=float, default=0.9,
-                                   help='Z component of origin of interaction ray')
-
-    interaction_group.add_argument('--dx', type=float, default=0.,
-                                   help='X component of direction of interaction ray')
-    interaction_group.add_argument('--dy', type=float, default=0.,
-                                   help='Y component of direction of interaction ray')
-    interaction_group.add_argument('--dz', type=float, default=-1.,
-                                   help='Z component of direction of interaction ray')
-
-    interaction_group.add_argument('--brush_radius', type=float, default=0.08,
-                                    help='The radius of the brush')
-    interaction_group.add_argument('--brush_intensity', type=float, default=0.03,
-                                    help='The intensity of the brush')
-    interaction_group.add_argument('--brush_type', choices=['linear', 'cubic', 'quintic', 'exp'], default='quintic',
-                                    help='The type of the brush')
-    
+    arg_parser = create_edit_parser()
 
     options = arg_parser.parse_args()
 
