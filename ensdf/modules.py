@@ -222,6 +222,18 @@ class Siren(nn.Module):
         
         return c
 
+    def get_num_bytes(self):
+        size_of_float = 4
+
+        features = [self.in_features] + self.hidden_features + [self.out_features]
+        size = 0
+        for f_in, f_out in zip(features[:-1], features[1:]):
+            size += f_in * f_out + f_out
+        
+        size *= size_of_float
+
+        return size
+
     def save(self, path):
         torch.save(
             {

@@ -97,8 +97,12 @@ class SimpleBrush(BrushBase):
         return points, sdf, normals
 
     def deform_mesh(self, mesh):
-        mesh_points = torch.tensor(mesh.vertices, dtype=torch.float32)
-        mesh_normals = torch.tensor(mesh.vertex_normals, dtype=torch.float32)
+        mesh_points = torch.tensor(
+            mesh.vertices, dtype=torch.float32, device=self.inter_point.device
+        )
+        mesh_normals = torch.tensor(
+            mesh.vertex_normals, dtype=torch.float32, device=self.inter_point.device
+        )
 
         inside = self.inside_interaction(mesh_points)
         points_in_interaction = mesh_points[inside]
@@ -115,8 +119,8 @@ class SimpleBrush(BrushBase):
         mesh_normals[inside] = adjusted_normals
 
         deformed_mesh = trimesh.Trimesh(
-            vertices=mesh_points,
-            vertex_normals=mesh_normals,
+            vertices=mesh_points.cpu(),
+            vertex_normals=mesh_normals.cpu(),
             faces=mesh.faces
         )
 
