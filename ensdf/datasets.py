@@ -52,13 +52,16 @@ class PointCloudDataset(DatasetBase):
 
 
 class MeshDataset(DatasetBase):
-    def __init__(self, mesh_path, num_samples, device):
+    def __init__(self, mesh_or_path, num_samples, device):
         super().__init__()
 
         self.num_samples = num_samples
         self.device = device
 
-        self.mesh = trimesh.load_mesh(mesh_path)
+        if isinstance(mesh_or_path, trimesh.Trimesh):
+            self.mesh = copy.deepcopy(mesh_or_path)
+        else:
+            self.mesh = trimesh.load_mesh(mesh_or_path)
 
         # Normalize mesh to lie inside [-(1 - border), 1 - border]^3
         normalize_trimesh(self.mesh, border=0.15)
