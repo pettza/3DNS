@@ -96,16 +96,16 @@ class Siren(nn.Module):
         self.hidden_omega_0 = hidden_omega_0
         
         self.net = []
-        features = [in_features] + hidden_features + [out_features]
+        self.features = [in_features] + hidden_features + [out_features]
 
         self.net.append(
             SineLayer(
-                features[0], features[1],
+                self.features[0], self.features[1],
                 is_first=True,
                 omega_0=first_omega_0
             )
         )
-        for f_in, f_out in zip(features[1:-2], features[2:-1]):
+        for f_in, f_out in zip(self.features[1:-2], self.features[2:-1]):
             self.net.append(
                 SineLayer(
                     f_in, f_out,
@@ -115,19 +115,19 @@ class Siren(nn.Module):
             )
         
         if outermost_linear:
-            final_linear = nn.Linear(features[-2], features[-1])
+            final_linear = nn.Linear(self.features[-2], self.features[-1])
             
             with torch.no_grad():
                 final_linear.weight.uniform_(
-                    -np.sqrt(6 / features[-2]) / hidden_omega_0, 
-                    np.sqrt(6 / features[-2]) / hidden_omega_0
+                    -np.sqrt(6 / self.features[-2]) / hidden_omega_0, 
+                    np.sqrt(6 / self.features[-2]) / hidden_omega_0
                 )
                 
             self.net.append(final_linear)
         else:
             self.net.append(
                 SineLayer(
-                    features[-2], features[-1],
+                    self.features[-2], self.features[-1],
                     is_first=False,
                     omega_0=hidden_omega_0
                 )
@@ -158,6 +158,27 @@ class Siren(nn.Module):
                     self.net[i] = torch.nn.utils.remove_weight_norm(mod, name='weight')
             
             self.weight_norm = False
+
+    def reset_parameters(self):
+        weight_norm = self.weight_norm
+        if weight_norm:
+            self.remove_weight_norm()
+        
+        self.net[0].linear.reset_parameters()
+        self.net[0].init_weights()
+        for mod in self.net[1:]:
+            if isinstance(mod, SineLayer):
+                mod.linear.reset_parameters()
+                mod.init_weights()
+            else:
+                mod.reset_parameters()
+                mod.weight.uniform_(
+                    -np.sqrt(6 / self.features[-2]) / self.hidden_omega_0, 
+                    np.sqrt(6 / self.features[-2]) / self.hidden_omega_0
+                )
+
+        if weight_norm:
+            self.add_weight_norm()
 
     def freeze_parameters(self):
         for param in self.parameters():
@@ -225,9 +246,8 @@ class Siren(nn.Module):
     def get_num_bytes(self):
         size_of_float = 4
 
-        features = [self.in_features] + self.hidden_features + [self.out_features]
         size = 0
-        for f_in, f_out in zip(features[:-1], features[1:]):
+        for f_in, f_out in zip(self.features[:-1], self.features[1:]):
             size += f_in * f_out + f_out
         
         size *= size_of_float
