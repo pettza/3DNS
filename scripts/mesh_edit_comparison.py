@@ -175,10 +175,15 @@ def main():
                 simple_mesh_edited.export(simple_mesh_edited_path)
                 model_copy.save(model_path)
 
-            original_mesh_edited_dataset = datasets.MeshDataset(original_mesh_edited, options.chamfer_samples, device)
-            simple_mesh_edited_dataset = datasets.MeshDataset(simple_mesh_edited, options.chamfer_samples, device)
+            original_mesh_edited_dataset = datasets.MeshDataset(
+                original_mesh_edited, options.chamfer_samples, device, normalize=False
+            )
+            simple_mesh_edited_dataset = datasets.MeshDataset(
+                simple_mesh_edited, options.chamfer_samples, device, normalize=False
+            )
     
             # Chamfer distance over interaction
+            brush.radius = max(brush.radius, brush.intensity) + 0.02 # Increase radius a bit
             original_mesh_editied_inter_pc = gather_samples_in_interaction(
                 brush, lambda: original_mesh_edited_dataset.sample()['points'], options.chamfer_samples
             ).cpu().numpy()
@@ -188,14 +193,19 @@ def main():
             model_inter_pc = gather_samples_in_interaction(
                 brush, lambda: next(model_sampler)['points'], options.chamfer_samples
             ).cpu().numpy()
+            brush.radius = options.brush_radius # Revert to specified radius
 
             model_inter_dist = chamfer(original_mesh_editied_inter_pc, model_inter_pc)
             simple_mesh_inter_dist = chamfer(original_mesh_editied_inter_pc, simple_mesh_edited_inter_pc)
             model_inter_dists[i][j] = model_inter_dist
             simple_mesh_inter_dists[i][j] = simple_mesh_inter_dist
 
-        original_mesh_edited_dataset = datasets.MeshDataset(original_mesh_edited, options.chamfer_samples, device)
-        simple_mesh_edited_dataset = datasets.MeshDataset(simple_mesh_edited, options.chamfer_samples, device)
+        original_mesh_edited_dataset = datasets.MeshDataset(
+            original_mesh_edited, options.chamfer_samples, device, normalize=False
+        )
+        simple_mesh_edited_dataset = datasets.MeshDataset(
+            simple_mesh_edited, options.chamfer_samples, device, normalize=False
+        )
     
         # Chamfer distance over entire surface
         original_mesh_editied_total_pc = original_mesh_edited_dataset.sample()['points'].cpu().numpy()
@@ -209,25 +219,34 @@ def main():
 
     def write_distances(f, dists):
         if dists.size > 1:
-            f.write(f'Number of samples: {dists.size}\n')
             f.write(f'\tMean: {dists.mean()}\n')
             f.write(f'\tStd: {dists.std()}\n')
         else:
             f.write(f'\t{dists.item(0)}\n')
     
-    results_filename = os.path.join(options.model_dir, 'chamfer_distances')
+    results_filename = os.path.join(options.model_dir, 'chamfer_distances.txt')
     with open(results_filename, 'w') as f:
         f.write('- Chamfer distance over entire surface\n')
+        f.write(f'Number of samples: {model_total_dists.size}\n')
         f.write('Model - Original Mesh:\n')
         write_distances(f, model_total_dists)
         f.write('Simple Mesh - Original Mesh:\n')
         write_distances(f, simple_mesh_total_dists)
+        f.write('Relative distances:\n')
+        relative_total_dists = (simple_mesh_total_dists - model_total_dists) / simple_mesh_total_dists
+        write_distances(f, relative_total_dists)
+
+        f.write('\n')
 
         f.write('- Chamfer distance over interaction\n')
         f.write('Model - Original Mesh:\n')
+        f.write(f'Number of samples: {model_inter_dists.size}\n')
         write_distances(f, model_inter_dists)
         f.write('Simple Mesh - Original Mesh:\n')
         write_distances(f, simple_mesh_inter_dists)
+        f.write('Relative distances:\n')
+        relative_inter_dists = (simple_mesh_inter_dists - model_inter_dists) / simple_mesh_inter_dists
+        write_distances(f, relative_inter_dists)
 
     with open(results_filename) as f:
         print(f.read())
