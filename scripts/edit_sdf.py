@@ -49,7 +49,7 @@ def main():
     )
 
     if options.new_model:
-        model.reset_parameters()
+        model.init_parameters()
 
     training.train_sdf(
         model=model,

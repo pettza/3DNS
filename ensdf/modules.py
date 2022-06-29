@@ -159,7 +159,7 @@ class Siren(nn.Module):
             
             self.weight_norm = False
 
-    def reset_parameters(self):
+    def init_parameters(self):
         weight_norm = self.weight_norm
         if weight_norm:
             self.remove_weight_norm()
@@ -172,10 +172,11 @@ class Siren(nn.Module):
                 mod.init_weights()
             else:
                 mod.reset_parameters()
-                mod.weight.uniform_(
-                    -np.sqrt(6 / self.features[-2]) / self.hidden_omega_0, 
-                    np.sqrt(6 / self.features[-2]) / self.hidden_omega_0
-                )
+                with torch.no_grad():
+                    mod.weight.uniform_(
+                        -np.sqrt(6 / self.features[-2]) / self.hidden_omega_0, 
+                        np.sqrt(6 / self.features[-2]) / self.hidden_omega_0
+                    )
 
         if weight_norm:
             self.add_weight_norm()
