@@ -14,7 +14,9 @@ from ensdf.brushes import SimpleBrush
 
 
 def main():
-    arg_parser = create_edit_parser()
+    arg_parser, training_group, pretrained_group, dataset_group, interaction_group = create_edit_parser()
+    training_group.add_argument('--new_model', action='store_true',
+                                help='If specified, a new model will be trained, instead of continuing training the pretrained.')
 
     options = arg_parser.parse_args()
 
@@ -46,12 +48,21 @@ def main():
         num_model_samples=options.num_model_samples
     )
 
+    if options.new_model:
+        model.reset_parameters()
+
     training.train_sdf(
-        model=model, surface_dataset=dataset, epochs=options.num_epochs, lr=options.lr,
-        epochs_til_checkpoint=options.num_epochs, pretrain_epochs=0,
+        model=model,
+        surface_dataset=dataset,
+        lr=options.lr,
+        epochs=options.num_epochs,
+        epochs_til_checkpoint=options.epochs_til_ckpt,
+        pretrain_epochs=100 if options.new_model else 0,
         regularization_samples=options.regularization_samples,
         include_empty_space_loss=not options.no_empty_space,
-        ewc=options.ewc, model_dir=options.model_dir, device=device
+        ewc=options.ewc,
+        model_dir=options.model_dir,
+        device=device
     )
 
 

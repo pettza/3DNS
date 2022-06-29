@@ -11,11 +11,11 @@ def create_parser():
 
 def create_edit_parser():
     arg_parser = create_parser()
-    add_edit_training_options(arg_parser)
-    add_pretrained_model_options(arg_parser)
-    add_edit_dataset_options(arg_parser)
-    add_interaction_options(arg_parser)
-    return arg_parser
+    training_group = add_edit_training_options(arg_parser)
+    pretrained_group = add_pretrained_model_options(arg_parser)
+    dataset_group = add_edit_dataset_options(arg_parser)
+    interaction_group = add_interaction_options(arg_parser)
+    return arg_parser, training_group, pretrained_group, dataset_group, interaction_group
 
 
 def add_training_options(arg_parser):
@@ -43,6 +43,8 @@ def add_edit_training_options(arg_parser):
                        help='Learning rate.')
     group.add_argument('--num_epochs', type=int, default=20,
                        help='Number of epochs to train for.')
+    group.add_argument('--epochs_til_ckpt', type=int, default=10_000,
+                       help='Numbr of epochs between checkpoints.')
     group.add_argument('--regularization_samples', type=int, default=120_000,
                        help='Number of samples for regularization.')
     group.add_argument('--no_empty_space', action='store_true',
