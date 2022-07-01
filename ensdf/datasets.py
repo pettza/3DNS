@@ -200,7 +200,6 @@ class SDFEditingDataset(DatasetBase):
 
         rejected_samples = self.num_model_samples - filtered_model_points.shape[0]
         num_interaction_samples = self.interaction_samples_factor * rejected_samples
-        print(num_interaction_samples)
 
         # Interaction samples
         inter_points, inter_sdf, inter_normals = (
