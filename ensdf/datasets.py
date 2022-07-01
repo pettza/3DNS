@@ -158,8 +158,8 @@ class SDFEditingDataset(DatasetBase):
     def __init__(
         self, model, device,
         brush : brushes.BrushBase,
-        num_interaction_samples,
-        num_model_samples
+        num_model_samples,
+        interaction_samples_factor,
     ):
         super().__init__()
 
@@ -169,8 +169,8 @@ class SDFEditingDataset(DatasetBase):
 
         self.brush = brush
 
-        self.num_interaction_samples = num_interaction_samples
         self.num_model_samples = num_model_samples
+        self.interaction_samples_factor = interaction_samples_factor
 
         self.sdf_sampler = SDFSampler(
             self.model,
@@ -198,8 +198,9 @@ class SDFEditingDataset(DatasetBase):
         filtered_model_normals = self.model_samples['normals'][keep_cond]
         filtered_model_sdf     = self.model_samples['sdf'][keep_cond]
 
-        num_interaction_samples = self.num_interaction_samples
-        # num_interaction_samples = self.num_model_samples - filtered_model_points.shape[0]
+        rejected_samples = self.num_model_samples - filtered_model_points.shape[0]
+        num_interaction_samples = self.interaction_samples_factor * rejected_samples
+        print(num_interaction_samples)
 
         # Interaction samples
         inter_points, inter_sdf, inter_normals = (
