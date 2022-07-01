@@ -44,8 +44,8 @@ def main():
 
     dataset = datasets.SDFEditingDataset(
         model, device, brush,
-        num_interaction_samples=options.num_interaction_samples,
-        num_model_samples=options.num_model_samples
+        num_model_samples=options.num_model_samples,
+        interaction_samples_factor=options.interaction_samples_factor
     )
 
     if options.new_model:

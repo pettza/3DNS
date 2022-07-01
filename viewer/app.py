@@ -63,7 +63,7 @@ class ENSDFWindow(pyglet.window.Window):
         
         self.edit_dataset = SDFEditingDataset(
             self.model, self.device, self.brush,
-            num_model_samples=120_000, interaction_samples_factor=10,
+            num_model_samples=120_000
         )
         self.lr = 1e-4
         

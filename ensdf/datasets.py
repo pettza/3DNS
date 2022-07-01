@@ -159,7 +159,7 @@ class SDFEditingDataset(DatasetBase):
         self, model, device,
         brush : brushes.BrushBase,
         num_model_samples,
-        interaction_samples_factor,
+        interaction_samples_factor=10
     ):
         super().__init__()
 

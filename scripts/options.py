@@ -56,10 +56,11 @@ def add_edit_training_options(arg_parser):
 
 def add_edit_dataset_options(arg_parser):
     group = arg_parser.add_argument_group('Dataset options')
-    group.add_argument('--num_interaction_samples', type=int, default=5000,
-                       help='Number of samples for interaction.')
     group.add_argument('--num_model_samples', type=int, default=120000,
                        help='Number of samples from pretrained model.')
+    group.add_argument('--interaction_samples_factor', type=int, default=10,
+                       help='The number of samples in the interaction is this number \
+                             times the number of surface samples in the interaction area.')
     return group
 
 
