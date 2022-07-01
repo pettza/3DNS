@@ -31,10 +31,12 @@ def raymarch(model, aabb, origins, directions, batch_size=1<<16, num_iter=40):
         t = torch.where(hit & ~inside_bb, thit, torch.tensor(0., device=origins.device))
         b_points = origins + t * directions
 
+        sgn = torch.sign(model(b_points))
+
         with torch.no_grad():
             for i in range(num_iter):
                 b_sdf = model(b_points)
-                b_points.addcmul_(b_sdf, directions)
+                b_points.addcmul_(sgn * b_sdf, directions)
             
         b_points = b_points.detach()
         b_points.requires_grad = True
@@ -43,9 +45,11 @@ def raymarch(model, aabb, origins, directions, batch_size=1<<16, num_iter=40):
         
         b_normals = gradient(b_sdf, b_points).detach()
         b_points = b_points.detach()
+
+        b_normals = -torch.sign((directions * b_normals).sum(-1, keepdim=True)) * b_normals
         
         inside_bb = aabb.contains(b_points)
-        b_ray_hit = inside_bb # & (b_sdf < RAYMARCH_CONVERGENCE_THRESHOLD)
+        b_ray_hit = inside_bb & (torch.abs(b_sdf) < RAYMARCH_CONVERGENCE_THRESHOLD)
         
         return b_points, b_normals, b_sdf, b_ray_hit
 
