@@ -11,12 +11,16 @@ from ensdf.aabb import AABB
 from ensdf.raymarching import raymarch_single_ray
 from ensdf.utils import get_cuda_if_available
 from ensdf.brushes import SimpleBrush
+from ensdf.sampling.sdf import SDFSampler
+from ensdf.metrics import chamfer
 
 
 def main():
     arg_parser, training_group, pretrained_group, dataset_group, interaction_group = create_edit_parser()
     training_group.add_argument('--new_model', action='store_true',
                                 help='If specified, a new model will be trained, instead of continuing training the pretrained.')
+    arg_parser.add_argument('--chamfer_samples', type=int, default=100_000,
+                            help='Number of samples for chamfer distance.')
 
     options = arg_parser.parse_args()
 
@@ -64,6 +68,19 @@ def main():
         model_dir=options.model_dir,
         device=device
     )
+
+    chamfer_dataset = datasets.SDFEditingDataset(
+        dataset.model, device, brush,
+        num_model_samples=options.chamfer_samples,
+        interaction_samples_factor=1
+    )
+    sampler = SDFSampler(model, device, options.chamfer_samples)
+    
+    chamfer_dist = chamfer(
+        chamfer_dataset.sample()['points'].cpu().numpy(),
+        next(sampler)['points'].cpu().numpy()
+    )
+    print(chamfer_dist)
 
 
 if __name__ == '__main__':
