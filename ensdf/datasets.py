@@ -154,6 +154,9 @@ class RegularizationDataset(DatasetBase):
         return {'points': points}
 
 
+MIN_INTERACTION_SAMPLES = 1000
+
+
 class SDFEditingDataset(DatasetBase):
     def __init__(
         self, model, device,
@@ -200,6 +203,7 @@ class SDFEditingDataset(DatasetBase):
 
         rejected_samples = self.num_model_samples - filtered_model_points.shape[0]
         num_interaction_samples = self.interaction_samples_factor * rejected_samples
+        num_interaction_samples = max(num_interaction_samples, MIN_INTERACTION_SAMPLES)
 
         # Interaction samples
         inter_points, inter_sdf, inter_normals = (
