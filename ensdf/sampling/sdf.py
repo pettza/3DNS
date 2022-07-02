@@ -76,17 +76,6 @@ class SDFSampler:
 
         self.compute_sdf_normals()
 
-    def refine_samples(self, samples, num_steps):
-        for i in range(num_steps):
-            sdf_pred = self.model(samples)
-            
-            grad = gradient(sdf_pred, samples)
-            sdf_pred, grad = sdf_pred.detach(), grad.detach()
-            
-            samples = samples - F.normalize(grad, dim=1) * sdf_pred
-            
-        return samples, sdf_pred
-
     def compute_sdf_normals(self):
         self.samples.requires_grad = True
 
