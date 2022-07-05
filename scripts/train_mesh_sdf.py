@@ -25,7 +25,7 @@ def main():
 
     device = get_cuda_if_available()
     dataset = datasets.MeshDataset(
-        mesh_path=options.mesh_path,
+        mesh_or_path=options.mesh_path,
         num_samples=options.surface_samples,
         device=device
     )
