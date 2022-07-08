@@ -15,7 +15,7 @@ def create_edit_parser():
     pretrained_group = add_pretrained_model_options(arg_parser)
     dataset_group = add_edit_dataset_options(arg_parser)
     interaction_group = add_interaction_options(arg_parser)
-    return arg_parser, training_group, pretrained_group, dataset_group, interaction_group
+    return arg_parser, (training_group, pretrained_group, dataset_group, interaction_group)
 
 
 def add_training_options(arg_parser):

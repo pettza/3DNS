@@ -35,7 +35,7 @@ def gather_samples_in_interaction(brush, sample_fn, n_samples):
 
 
 def main():
-    arg_parser = create_edit_parser()
+    arg_parser, arg_groups = create_edit_parser()
 
     # Mesh options
     mesh_group = arg_parser.add_argument_group('Mesh options')

@@ -16,7 +16,7 @@ from ensdf.metrics import chamfer
 
 
 def main():
-    arg_parser, training_group, pretrained_group, dataset_group, interaction_group = create_edit_parser()
+    arg_parser, (training_group, pretrained_group, dataset_group, interaction_group) = create_edit_parser()
     training_group.add_argument('--new_model', action='store_true',
                                 help='If specified, a new model will be trained, instead of continuing training the pretrained.')
     arg_parser.add_argument('--chamfer_samples', type=int, default=100_000,
