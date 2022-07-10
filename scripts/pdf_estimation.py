@@ -127,10 +127,16 @@ def main():
     n_bins = 100
     low, high = 0., 1.5
     bins = np.linspace(low, high, n_bins)
-    ax.hist(densities, bins=bins)
-    ax.axvline(x=inv_area, color='red', linestyle='--')
-    ax.set_xticks(ax.get_xticks() + [inv_area])
+    density_hist, _ = np.histogram(densities, bins=bins)
+    density_hist = density_hist / density_hist.max()
+    ax.bar(bins[:-1], density_hist, width=bins[1:] - bins[:-1], align='edge')
+    ax.axvline(x=inv_area, color='red', linestyle='--', linewidth=3)
+    ticks = list(ax.get_xticks())
+    ax.set_xticks(ticks + [inv_area], labels=[f'{t:0.1f}' for t in ticks] + [f'{inv_area:0.3f}'])
     ax.set_xlim(low, high)
+    ax.xaxis.get_majorticklabels()[-1].set_y(-.025)
+    plt.xticks(fontsize = 18)
+    plt.yticks(fontsize = 18)
     plt.show()
 
 
