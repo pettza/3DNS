@@ -109,21 +109,30 @@ def main():
     edit_iterations = options.average or 1
     model_total_dists = np.empty(edit_iterations)
     model_inter_dists = np.empty((edit_iterations, num_edits))
+    naive_model_total_dists = np.empty(edit_iterations)
+    naive_model_inter_dists = np.empty((edit_iterations, num_edits))
     simple_mesh_total_dists = np.empty(edit_iterations)
     simple_mesh_inter_dists = np.empty((edit_iterations, num_edits))
 
     for i in range(edit_iterations):
         model_copy = copy.deepcopy(model)
+        naive_model = copy.deepcopy(model)
         original_mesh_edited = copy.deepcopy(original_mesh)
         simple_mesh_edited = copy.deepcopy(simple_mesh)
 
         model_sampler = SDFSampler(model_copy, device, options.chamfer_samples, burnout_iters=100)
+        naive_model_sampler = SDFSampler(naive_model, device, options.chamfer_samples, burnout_iters=100)
 
         # Edit model
         dataset = datasets.SDFEditingDataset(
             model_copy, device, brush,
             num_model_samples=options.num_model_samples,
             interaction_samples_factor=options.interaction_samples_factor
+        )
+        naive_dataset = datasets.SDFEditingDataset(
+            naive_model, device, brush,
+            num_model_samples=0,
+            interaction_samples_factor=options.num_model_samples
         )
 
         if random_edits:
@@ -138,7 +147,7 @@ def main():
             origin    = torch.tensor([[options.ox, options.oy, options.oz]], device=device)
             direction = torch.tensor([[options.dx, options.dy, options.dz]], device=device)
 
-            inter_points, inter_normals, inter_sdfs, ray_hit = raymarch_single_ray(model, aabb, origin, direction)
+            inter_points, inter_normals, inter_sdfs, ray_hit = raymarch_single_ray(model_copy, aabb, origin, direction)
         
             if not ray_hit:
                 print("The specified ray doesn't intersect the surface")
@@ -161,6 +170,15 @@ def main():
             dataset.update_model(model_copy, sampler_iters=20)
             model_sampler.burnout(20)
 
+            training.train_sdf(
+                model=naive_model, surface_dataset=naive_dataset, epochs=options.num_epochs, lr=options.lr,
+                epochs_til_checkpoint=options.num_epochs, pretrain_epochs=0,
+                regularization_samples=options.regularization_samples,
+                include_empty_space_loss=not options.no_empty_space,
+                ewc=options.ewc, device=device
+            )
+            naive_model_sampler.burnout(20)
+
             # Edit meshes
             original_mesh_edited = brush.deform_mesh(original_mesh_edited)
             simple_mesh_edited = brush.deform_mesh(simple_mesh_edited)
@@ -170,10 +188,12 @@ def main():
                 original_mesh_edtied_path = os.path.join(options.model_dir, 'original_mesh_edited.obj')
                 simple_mesh_edited_path = os.path.join(options.model_dir, 'simple_mesh_edited.obj')
                 model_path = os.path.join(options.model_dir, 'model.pth')
+                naive_model_path = os.path.join(options.model_dir, 'naive_model.pth')
 
                 original_mesh_edited.export(original_mesh_edtied_path)
                 simple_mesh_edited.export(simple_mesh_edited_path)
                 model_copy.save(model_path)
+                naive_model.save(naive_model_path)
 
             original_mesh_edited_dataset = datasets.MeshDataset(
                 original_mesh_edited, options.chamfer_samples, device, normalize=False
@@ -183,7 +203,7 @@ def main():
             )
     
             # Chamfer distance over interaction
-            brush.radius = max(brush.radius, brush.intensity) + 0.02 # Increase radius a bit
+            brush.radius = max(brush.radius, brush.intensity)
             original_mesh_editied_inter_pc = gather_samples_in_interaction(
                 brush, lambda: original_mesh_edited_dataset.sample()['points'], options.chamfer_samples
             ).cpu().numpy()
@@ -193,11 +213,16 @@ def main():
             model_inter_pc = gather_samples_in_interaction(
                 brush, lambda: next(model_sampler)['points'], options.chamfer_samples
             ).cpu().numpy()
+            naive_model_inter_pc = gather_samples_in_interaction(
+                brush, lambda: next(naive_model_sampler)['points'], options.chamfer_samples
+            ).cpu().numpy()
             brush.radius = options.brush_radius # Revert to specified radius
 
             model_inter_dist = chamfer(original_mesh_editied_inter_pc, model_inter_pc)
+            naive_model_inter_dist = chamfer(original_mesh_editied_inter_pc, naive_model_inter_pc)
             simple_mesh_inter_dist = chamfer(original_mesh_editied_inter_pc, simple_mesh_edited_inter_pc)
             model_inter_dists[i][j] = model_inter_dist
+            naive_model_inter_dists[i][j] = naive_model_inter_dist
             simple_mesh_inter_dists[i][j] = simple_mesh_inter_dist
 
         original_mesh_edited_dataset = datasets.MeshDataset(
@@ -211,10 +236,13 @@ def main():
         original_mesh_editied_total_pc = original_mesh_edited_dataset.sample()['points'].cpu().numpy()
         simple_mesh_edited_total_pc = simple_mesh_edited_dataset.sample()['points'].cpu().numpy()
         model_total_pc = next(model_sampler)['points'].cpu().numpy()
+        naive_model_total_pc = next(naive_model_sampler)['points'].cpu().numpy()
 
         model_total_dist = chamfer(original_mesh_editied_total_pc, model_total_pc)
+        naive_model_total_dist = chamfer(original_mesh_editied_total_pc, naive_model_total_pc)
         simple_mesh_total_dist = chamfer(original_mesh_editied_total_pc, simple_mesh_edited_total_pc)
         model_total_dists[i] = model_total_dist
+        naive_model_total_dists[i] = naive_model_total_dist
         simple_mesh_total_dists[i] = simple_mesh_total_dist
 
     def write_distances(f, dists):
@@ -230,11 +258,10 @@ def main():
         f.write(f'Number of samples: {model_total_dists.size}\n')
         f.write('Model - Original Mesh:\n')
         write_distances(f, model_total_dists)
+        f.write('Naive Model - Original Mesh:\n')
+        write_distances(f, naive_model_total_dists)
         f.write('Simple Mesh - Original Mesh:\n')
         write_distances(f, simple_mesh_total_dists)
-        f.write('Relative distances:\n')
-        relative_total_dists = (simple_mesh_total_dists - model_total_dists) / simple_mesh_total_dists
-        write_distances(f, relative_total_dists)
 
         f.write('\n')
 
@@ -242,11 +269,10 @@ def main():
         f.write('Model - Original Mesh:\n')
         f.write(f'Number of samples: {model_inter_dists.size}\n')
         write_distances(f, model_inter_dists)
+        f.write('Naive Model - Original Mesh:\n')
+        write_distances(f, naive_model_inter_dists)
         f.write('Simple Mesh - Original Mesh:\n')
         write_distances(f, simple_mesh_inter_dists)
-        f.write('Relative distances:\n')
-        relative_inter_dists = (simple_mesh_inter_dists - model_inter_dists) / simple_mesh_inter_dists
-        write_distances(f, relative_inter_dists)
 
     with open(results_filename) as f:
         print(f.read())

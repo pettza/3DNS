@@ -175,13 +175,16 @@ class SDFEditingDataset(DatasetBase):
         self.num_model_samples = num_model_samples
         self.interaction_samples_factor = interaction_samples_factor
 
-        self.sdf_sampler = SDFSampler(
-            self.model,
-            self.device, self.num_model_samples
-        )
+        self.sdf_sampler = None
+        if self.num_model_samples != 0:
+            self.sdf_sampler = SDFSampler(
+                self.model,
+                self.device, self.num_model_samples
+            )
         
-        self.model_samples = None
-        self.next_model_samples = next(self.sdf_sampler)
+        if self.sdf_sampler:
+            self.model_samples = None
+            self.next_model_samples = next(self.sdf_sampler)
 
     def update_model(self, model, sampler_iters=0):
         self.model = copy.deepcopy(model)
@@ -189,32 +192,41 @@ class SDFEditingDataset(DatasetBase):
         self.sdf_sampler.burnout(sampler_iters)
 
     def sample(self, num_samples=None):
-        self.model_samples = self.next_model_samples
-
         self.iters += 1
+        
+        if self.num_model_samples != 0: 
+            self.model_samples = self.next_model_samples
+            self.next_model_samples = next(self.sdf_sampler)
 
-        self.next_model_samples = next(self.sdf_sampler)
+            # Model samples
+            keep_cond = ~self.brush.inside_interaction(self.model_samples['points'])
+            filtered_model_points  = self.model_samples['points'][keep_cond]
+            filtered_model_normals = self.model_samples['normals'][keep_cond]
+            filtered_model_sdf     = self.model_samples['sdf'][keep_cond]
 
-        # Model samples
-        keep_cond = ~self.brush.inside_interaction(self.model_samples['points'])
-        filtered_model_points  = self.model_samples['points'][keep_cond]
-        filtered_model_normals = self.model_samples['normals'][keep_cond]
-        filtered_model_sdf     = self.model_samples['sdf'][keep_cond]
+            rejected_samples = self.num_model_samples - filtered_model_points.shape[0]
+            num_interaction_samples = self.interaction_samples_factor * rejected_samples
+            num_interaction_samples = max(num_interaction_samples, MIN_INTERACTION_SAMPLES)
 
-        rejected_samples = self.num_model_samples - filtered_model_points.shape[0]
-        num_interaction_samples = self.interaction_samples_factor * rejected_samples
-        num_interaction_samples = max(num_interaction_samples, MIN_INTERACTION_SAMPLES)
+            # Interaction samples
+            inter_points, inter_sdf, inter_normals = (
+                self.brush.sample_interaction(self.model, num_interaction_samples)
+            )
 
-        # Interaction samples
-        inter_points, inter_sdf, inter_normals = (
-            self.brush.sample_interaction(self.model, num_interaction_samples)
-        )
+            # Collect all samples
+            sample_points  = torch.cat((filtered_model_points, inter_points))
+            sample_normals = torch.cat((filtered_model_normals, inter_normals))
+            sample_sdf     = torch.cat((filtered_model_sdf, inter_sdf))
+        else:
+            # Use only interaction samples
+            inter_points, inter_sdf, inter_normals = (
+                self.brush.sample_interaction(self.model, self.interaction_samples_factor)
+            )
 
-        # Collect all samples
-        sample_points  = torch.cat((filtered_model_points, inter_points))
-        sample_normals = torch.cat((filtered_model_normals, inter_normals))
-        sample_sdf     = torch.cat((filtered_model_sdf, inter_sdf))
-
+            sample_points  = inter_points
+            sample_normals = inter_normals
+            sample_sdf     = inter_sdf
+        
         return {
             'points': sample_points,
             'sdf': sample_sdf,
