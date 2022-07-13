@@ -7,6 +7,7 @@ from .diff_operators import gradient
 
 
 RAYMARCH_CONVERGENCE_THRESHOLD = 0.001
+RAYMARCH_MARCH_FACTOR = 0.7
 
 
 def raymarch(model, aabb, origins, directions, batch_size=1<<16, num_iter=40):
@@ -36,7 +37,7 @@ def raymarch(model, aabb, origins, directions, batch_size=1<<16, num_iter=40):
         with torch.no_grad():
             for i in range(num_iter):
                 b_sdf = model(b_points)
-                b_points.addcmul_(sgn * b_sdf, directions)
+                b_points.addcmul_(sgn * RAYMARCH_MARCH_FACTOR * b_sdf, directions)
             
         b_points = b_points.detach()
         b_points.requires_grad = True
