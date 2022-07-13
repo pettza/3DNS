@@ -3,6 +3,7 @@ import os
 import copy
 
 import torch
+import torch.nn.functional as F
 import numpy as np
 import trimesh
 import shutil
@@ -146,6 +147,7 @@ def main():
 
             origin    = torch.tensor([[options.ox, options.oy, options.oz]], device=device)
             direction = torch.tensor([[options.dx, options.dy, options.dz]], device=device)
+            direction = F.normalize(direction, dim=-1)
 
             inter_points, inter_normals, inter_sdfs, ray_hit = raymarch_single_ray(model_copy, aabb, origin, direction)
         

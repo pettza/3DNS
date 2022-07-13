@@ -2,6 +2,7 @@ import sys
 import os
 
 import torch
+import torch.nn.functional as F
 
 from options import create_edit_parser
 
@@ -32,6 +33,7 @@ def main():
 
     origin    = torch.tensor([[options.ox, options.oy, options.oz]], device=device)
     direction = torch.tensor([[options.dx, options.dy, options.dz]], device=device)
+    direction = F.normalize(direction, dim=-1)
 
     inter_point, inter_normal, inter_sdf, ray_hit = raymarch_single_ray(model, aabb, origin, direction)
     
