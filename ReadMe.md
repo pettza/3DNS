@@ -1,6 +1,7 @@
 # 3D Neurals Sculpting (3DNS): Editing Neural Distance Functions
+### [Project Page](https://pettza.github.io/3DNS)
 
-Code for the WACV 2023 paper
+This repository contains the source code for the paper "3D Neurals Sculpting (3DNS): Editing Neural Distance Functions"
 
 ## Code structure
 The code is organized as follows:
