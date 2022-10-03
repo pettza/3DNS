@@ -1,5 +1,5 @@
 # 3D Neurals Sculpting (3DNS): Editing Neural Distance Functions
-### [Project Page](https://pettza.github.io/3DNS)
+### [Project Page](https://pettza.github.io/3DNS) | [arXiv](https://arxiv.org/abs/2209.13971) | [Paper](https://arxiv.org/pdf/2209.13971.pdf)
 
 This repository contains the source code for the paper "3D Neurals Sculpting (3DNS): Editing Neural Distance Functions"
 
